@@ -219,6 +219,7 @@ afterEach(() => {
 test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
 
 test('uses the Dagor Project Manager name and application icons in its metadata', () => {
+  assert.equal(extensionManifest.name, 'dagor-project-manager');
   assert.equal(extensionManifest.displayName, 'Dagor Project Manager');
   assert.equal(extensionManifest.contributes.configuration.title, 'Dagor Project Manager');
   assert.equal(extensionManifest.contributes.viewsContainers.activitybar[0].title, 'Dagor Project Manager');
@@ -238,7 +239,7 @@ function uri(filePath) {
 }
 
 async function refreshCatalog() {
-  await commands.get('dagorBlk.refreshProjects')();
+  await commands.get('dagorProjectManager.refreshProjects')();
 }
 
 function projectData(applicationPath, rootPath, label, scenes = []) {
@@ -247,38 +248,38 @@ function projectData(applicationPath, rootPath, label, scenes = []) {
 
 test('registers Explorer commands and the Dagor webview sidebar', () => {
   assert.deepEqual([...commands.keys()], [
-    'dagorBlk.openInBlkEditor',
-    'dagorBlk.openInDaEditor',
-    'dagorBlk.openInDaViewer',
-    'dagorBlk.refreshProjects',
-    'dagorBlk.openSceneInDaEditor',
-    'dagorBlk.openProjectDaViewer',
-    'dagorBlk.buildProject',
-    'dagorBlk.generateProject'
+    'dagorProjectManager.openWithBlkEditor',
+    'dagorProjectManager.openWithDaEditor',
+    'dagorProjectManager.openWithDaViewer',
+    'dagorProjectManager.refreshProjects',
+    'dagorProjectManager.openSceneWithDaEditor',
+    'dagorProjectManager.openProjectWithDaViewer',
+    'dagorProjectManager.buildProject',
+    'dagorProjectManager.generateProject'
   ]);
-  assert.ok(providers.has('dagorProject.projects'));
+  assert.ok(providers.has('dagorProjectManager.projects'));
   assert.equal(webviewView.webview.options.enableScripts, true);
-  assert.ok(!extensionManifest.contributes.menus['view/title']?.some(item => item.command === 'dagorBlk.refreshProjects'));
+  assert.ok(!extensionManifest.contributes.menus['view/title']?.some(item => item.command === 'dagorProjectManager.refreshProjects'));
 });
 
 test('opens any BLK, including .folder.blk, in blkEditor', async () => {
-  await commands.get('dagorBlk.openInBlkEditor')(uri(folderFile));
+  await commands.get('dagorProjectManager.openWithBlkEditor')(uri(folderFile));
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'blkEditor-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [folderFile]);
 });
 
 test('opens application.blk in daEditor and daViewer', async () => {
-  await commands.get('dagorBlk.openInDaEditor')(uri(applicationFile));
+  await commands.get('dagorProjectManager.openWithDaEditor')(uri(applicationFile));
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'daEditor3x-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [applicationFile]);
 
-  await commands.get('dagorBlk.openInDaViewer')(uri(applicationFile));
+  await commands.get('dagorProjectManager.openWithDaViewer')(uri(applicationFile));
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'assetViewer2-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [applicationFile]);
 });
 
 test('opens a level with its project application.blk in daEditor', async () => {
-  await commands.get('dagorBlk.openInDaEditor')(uri(levelFile));
+  await commands.get('dagorProjectManager.openWithDaEditor')(uri(levelFile));
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'daEditor3x-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [applicationFile, levelFile]);
 });
@@ -490,10 +491,10 @@ test('the build button changes to stop while a build runs and stops the selected
 });
 
 test('rejects non-local URIs and reports missing executables', async () => {
-  await commands.get('dagorBlk.openInBlkEditor')({ scheme: 'untitled', fsPath: 'sample.blk' });
+  await commands.get('dagorProjectManager.openWithBlkEditor')({ scheme: 'untitled', fsPath: 'sample.blk' });
   assert.match(errors.at(-1), /local \.blk/);
 
   fs.rmSync(path.join(toolsDirectory, 'blkEditor-dev.exe'));
-  await commands.get('dagorBlk.openInBlkEditor')(uri(folderFile));
+  await commands.get('dagorProjectManager.openWithBlkEditor')(uri(folderFile));
   assert.match(errors.at(-1), /Cannot find blkEditor executable/);
 });

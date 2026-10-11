@@ -37,7 +37,7 @@ function resolveExecutable(configuredPath, toolsDirectory, settingName) {
       : undefined;
 
   if (!executablePath) {
-    throw new Error(`Set dagorBlk.toolsDirectory or configure an absolute path for ${settingName}.`);
+    throw new Error(`Set dagorProjectManager.toolsDirectory or configure an absolute path for ${settingName}.`);
   }
 
   if (!fs.existsSync(executablePath)) {
@@ -111,12 +111,12 @@ async function runTool(fileUri, kind) {
     return;
   }
 
-  const config = vscode.workspace.getConfiguration('dagorBlk');
+  const config = vscode.workspace.getConfiguration('dagorProjectManager');
   const workspaceRoot = vscode.workspace.getWorkspaceFolder(fileUri)?.uri.fsPath;
   const toolsDirectory = config.get('toolsDirectory') || process.env.DAGOR_CDK_DIR ||
     (workspaceRoot ? findToolsDirectory(workspaceRoot) : undefined);
   if (!toolsDirectory) {
-    vscode.window.showErrorMessage('Set dagorBlk.toolsDirectory or the DAGOR_CDK_DIR environment variable.');
+    vscode.window.showErrorMessage('Set dagorProjectManager.toolsDirectory or the DAGOR_CDK_DIR environment variable.');
     return;
   }
 
@@ -619,7 +619,7 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
   const output = vscode.window.createOutputChannel(`Dagor Build: ${project.label}`);
   output.show(true);
   output.appendLine(`Running: ${script} ${selected.join(' ')}`);
-  const python = vscode.workspace.getConfiguration('dagorBlk').get('pythonExecutable') || 'python';
+  const python = vscode.workspace.getConfiguration('dagorProjectManager').get('pythonExecutable') || 'python';
   const child = spawn(python, [script, ...selected], {
     cwd: path.dirname(script),
     windowsHide: true
@@ -666,9 +666,9 @@ function stopBuild(project, onBuildStateChange = () => {}) {
 
 function activate(context) {
   for (const [command, kind] of [
-    ['dagorBlk.openInBlkEditor', 'blkEditor'],
-    ['dagorBlk.openInDaEditor', 'daEditor'],
-    ['dagorBlk.openInDaViewer', 'daViewer']
+    ['dagorProjectManager.openWithBlkEditor', 'blkEditor'],
+    ['dagorProjectManager.openWithDaEditor', 'daEditor'],
+    ['dagorProjectManager.openWithDaViewer', 'daViewer']
   ]) {
     context.subscriptions.push(vscode.commands.registerCommand(command, fileUri => runTool(fileUri, kind)));
   }
@@ -676,14 +676,14 @@ function activate(context) {
   const catalog = new ProjectCatalog();
   const provider = new ProjectWebviewProvider(catalog);
   context.subscriptions.push(provider.disposable);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProject.projects', provider, {
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
     webviewOptions: { retainContextWhenHidden: true }
   }));
-  context.subscriptions.push(vscode.commands.registerCommand('dagorBlk.refreshProjects', () => catalog.refresh()));
-  context.subscriptions.push(vscode.commands.registerCommand('dagorBlk.openSceneInDaEditor', openSceneInDaEditor));
-  context.subscriptions.push(vscode.commands.registerCommand('dagorBlk.openProjectDaViewer', openProjectDaViewer));
-  context.subscriptions.push(vscode.commands.registerCommand('dagorBlk.buildProject', buildProject));
-  context.subscriptions.push(vscode.commands.registerCommand('dagorBlk.generateProject', project => {
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.refreshProjects', () => catalog.refresh()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.openSceneWithDaEditor', openSceneInDaEditor));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.openProjectWithDaViewer', openProjectDaViewer));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildProject', buildProject));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.generateProject', project => {
     vscode.window.showInformationMessage(`Project generation for ${project?.label || 'Dagor'} is not implemented yet.`);
   }));
 

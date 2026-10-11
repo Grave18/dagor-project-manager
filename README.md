@@ -27,21 +27,21 @@ For levels, the launch format is `daEditor3x-dev.exe <application.blk> <level.bl
 ## Installation without Marketplace
 
 1. Open the repository root in VS Code.
-2. Press `Ctrl+Shift+P`, run **Developer: Install Extension from Location...**, and select the folder `project_stalker/tools/vscode-dagor-blk`.
+2. Press `Ctrl+Shift+P`, run **Developer: Install Extension from Location...**, and select this repository's root folder.
 3. Reload the VS Code window if prompted.
 
 To temporarily load the extension during development, open this folder as a separate project and press `F5` to launch the Extension Development Host.
 
 ## Tool Paths
 
-The extension first uses the `dagorBlk.toolsDirectory` VS Code setting, then the `DAGOR_CDK_DIR` environment variable. If neither is set, it searches for `tools/dagor_cdk/windows-x86_64` (or `windows-arm64`) upward from the open workspace folder.
+The extension first uses the `dagorProjectManager.toolsDirectory` VS Code setting, then the `DAGOR_CDK_DIR` environment variable. If neither is set, it searches for `tools/dagor_cdk/windows-x86_64` (or `windows-arm64`) upward from the open workspace folder.
 
 If needed, specify the path in VS Code user or workspace settings:
 
 ```json
 {
-  "dagorBlk.toolsDirectory": "D:\\path\\to\\DagorEngine\\tools\\dagor_cdk\\windows-x86_64"
+  "dagorProjectManager.toolsDirectory": "D:\\path\\to\\DagorEngine\\tools\\dagor_cdk\\windows-x86_64"
 }
 ```
 
-Executable names are configurable via `dagorBlk.blkEditorExecutable`, `dagorBlk.daEditorExecutable`, and `dagorBlk.daViewerExecutable`; each value can be a name inside the CDK directory or an absolute path. Defaults are `blkEditor-dev.exe`, `daEditor3x-dev.exe`, and `assetViewer2-dev.exe` respectively. The build interpreter can be specified via `dagorBlk.pythonExecutable` (default `python`).
+Executable names are configurable via `dagorProjectManager.blkEditorExecutable`, `dagorProjectManager.daEditorExecutable`, and `dagorProjectManager.daViewerExecutable`; each value can be a name inside the CDK directory or an absolute path. Defaults are `blkEditor-dev.exe`, `daEditor3x-dev.exe`, and `assetViewer2-dev.exe` respectively. The build interpreter can be specified via `dagorProjectManager.pythonExecutable` (default `python`).

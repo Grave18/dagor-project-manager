@@ -1,5 +1,5 @@
 {
-  "name": "vscode-dagor-blk",
+  "name": "dagor-project-manager",
   "displayName": "Dagor Project Manager",
   "description": "Manage Dagor projects and open Dagor BLK files from VS Code.",
   "icon": "media/dagor.png",
@@ -14,17 +14,6 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:dagorBlk.openInBlkEditor",
-    "onCommand:dagorBlk.openInDaEditor",
-    "onCommand:dagorBlk.openInDaViewer",
-    "onCommand:dagorBlk.openSceneInDaEditor",
-    "onCommand:dagorBlk.openProjectDaViewer",
-    "onCommand:dagorBlk.buildProject",
-    "onCommand:dagorBlk.generateProject",
-    "onCommand:dagorBlk.refreshProjects",
-    "onView:dagorProject.projects"
-  ],
   "main": "./extension.js",
   "scripts": {
     "test": "node --test test/extension.test.js"
@@ -32,52 +21,53 @@
   "contributes": {
     "commands": [
       {
-        "command": "dagorBlk.openInBlkEditor",
+        "command": "dagorProjectManager.openWithBlkEditor",
         "title": "Open with Dagor blkEditor"
       },
       {
-        "command": "dagorBlk.openInDaEditor",
+        "command": "dagorProjectManager.openWithDaEditor",
         "title": "Open with Dagor daEditor"
       },
       {
-        "command": "dagorBlk.openInDaViewer",
+        "command": "dagorProjectManager.openWithDaViewer",
         "title": "Open with Dagor daViewer"
       },
       {
-        "command": "dagorBlk.openSceneInDaEditor",
+        "command": "dagorProjectManager.openSceneWithDaEditor",
         "title": "Open Scene in daEditor"
       },
       {
-        "command": "dagorBlk.openProjectDaViewer",
+        "command": "dagorProjectManager.openProjectWithDaViewer",
         "title": "Open Project in daViewer"
       },
       {
-        "command": "dagorBlk.buildProject",
+        "command": "dagorProjectManager.buildProject",
         "title": "Build Project Components"
       },
       {
-        "command": "dagorBlk.generateProject",
+        "command": "dagorProjectManager.generateProject",
         "title": "Generate Project (Not Implemented)"
       },
       {
-        "command": "dagorBlk.refreshProjects",
+        "command": "dagorProjectManager.refreshProjects",
         "title": "Refresh Dagor Projects"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "dagorProject",
+          "id": "dagorProjectManager",
           "title": "Dagor Project Manager",
           "icon": "media/dagor.svg"
         }
       ]
     },
     "views": {
-      "dagorProject": [
+      "dagorProjectManager": [
         {
-          "id": "dagorProject.projects",
+          "id": "dagorProjectManager.projects",
           "name": "Projects",
+          "icon": "media/dagor.svg",
           "type": "webview"
         }
       ]
@@ -85,24 +75,24 @@
     "menus": {
       "explorer/context": [
         {
-          "submenu": "dagorBlk.blkContext",
+          "submenu": "dagorProjectManager.blkContext",
           "when": "resourceFilename =~ /\\.blk$/i",
           "group": "navigation"
         }
       ],
-      "dagorBlk.blkContext": [
+      "dagorProjectManager.blkContext": [
         {
-          "command": "dagorBlk.openInDaEditor",
+          "command": "dagorProjectManager.openWithDaEditor",
           "when": "resourceFilename =~ /^application\\.blk$/i || resourceFilename =~ /\\.level\\.blk$/i",
           "group": "1_dagor"
         },
         {
-          "command": "dagorBlk.openInDaViewer",
+          "command": "dagorProjectManager.openWithDaViewer",
           "when": "resourceFilename =~ /^application\\.blk$/i",
           "group": "2_dagor"
         },
         {
-          "command": "dagorBlk.openInBlkEditor",
+          "command": "dagorProjectManager.openWithBlkEditor",
           "when": "resourceFilename =~ /\\.blk$/i",
           "group": "3_dagor"
         }
@@ -110,34 +100,34 @@
     },
     "submenus": [
       {
-        "id": "dagorBlk.blkContext",
+        "id": "dagorProjectManager.blkContext",
         "label": "Dagor Project Manager"
       }
     ],
     "configuration": {
       "title": "Dagor Project Manager",
       "properties": {
-        "dagorBlk.toolsDirectory": {
+        "dagorProjectManager.toolsDirectory": {
           "type": "string",
           "default": "",
           "description": "Directory containing Dagor CDK executables. Defaults to DAGOR_CDK_DIR or this repository's tools/dagor_cdk folder."
         },
-        "dagorBlk.daEditorExecutable": {
+        "dagorProjectManager.daEditorExecutable": {
           "type": "string",
           "default": "daEditor3x-dev.exe",
           "description": "daEditor executable name or absolute path."
         },
-        "dagorBlk.daViewerExecutable": {
+        "dagorProjectManager.daViewerExecutable": {
           "type": "string",
           "default": "assetViewer2-dev.exe",
           "description": "daViewer (Asset Viewer) executable name or absolute path."
         },
-        "dagorBlk.blkEditorExecutable": {
+        "dagorProjectManager.blkEditorExecutable": {
           "type": "string",
           "default": "blkEditor-dev.exe",
           "description": "blkEditor executable name or absolute path."
         },
-        "dagorBlk.pythonExecutable": {
+        "dagorProjectManager.pythonExecutable": {
           "type": "string",
           "default": "python",
           "description": "Python executable used to run the project's build.py script."
