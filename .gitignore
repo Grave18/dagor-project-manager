@@ -1,0 +1,7 @@
+# Dependencies
+node_modules/
+
+# Extension build and test artifacts
+out/
+.vscode-test/
+*.vsix
