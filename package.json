@@ -2,6 +2,7 @@
   "name": "dagor-project-manager",
   "displayName": "Dagor Project Manager",
   "description": "Manage Dagor projects and open Dagor BLK files from VS Code.",
+  "license": "MIT",
   "icon": "media/dagor.png",
   "extensionKind": [
     "workspace"
