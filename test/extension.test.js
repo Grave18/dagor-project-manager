@@ -411,7 +411,9 @@ test('runs selected components for the project from the webview', async () => {
   fakeChild.stdout.emit('data', 'build output');
   fakeChild.emit('exit', 0, null);
   assert.ok(outputChannel.lines.includes('build output'));
-  assert.match(outputChannel.lines.at(-1), /exit code 0/);
+  assert.ok(outputChannel.lines.some(line => line.includes('[DAGOR_PM] Disposed game executable watcher')));
+  assert.ok(outputChannel.lines.some(line => line.includes('[DAGOR_PM] Created game executable watcher')));
+  assert.ok(outputChannel.lines.some(line => /\[DAGOR_PM\].*exit code 0/.test(line)));
   await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });
   assert.match(webviewView.webview.html, /Build Project/);
   assert.doesNotMatch(webviewView.webview.html, /class="action build-toggle running"/);

@@ -25,6 +25,18 @@ const ICON_PATHS = {
 const runningBuilds = new Map();
 let gameExecutableWatcher = undefined;
 let globalCatalog = undefined;
+let extensionSubscriptions = undefined;
+let gameExecutableWatcherOutput = undefined;
+
+function createGameExecutableWatcher(output = gameExecutableWatcherOutput) {
+  gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
+  extensionSubscriptions?.push(gameExecutableWatcher);
+  extensionSubscriptions?.push(gameExecutableWatcher.onDidCreate(() => globalCatalog.refresh()));
+  extensionSubscriptions?.push(gameExecutableWatcher.onDidDelete(() => globalCatalog.refresh()));
+  extensionSubscriptions?.push(gameExecutableWatcher.onDidChange(() => globalCatalog.refresh()));
+  output?.appendLine('[DAGOR_PM] Created game executable watcher (**/game/**/*.exe).');
+  gameExecutableWatcherOutput = undefined;
+}
 
 function iconSvg(name, className = '') {
   const classes = ['icon', className].filter(Boolean).join(' ');
@@ -228,10 +240,7 @@ class ProjectCatalog {
 
   refresh() {
     if (!gameExecutableWatcher && runningBuilds.size === 0 && globalCatalog) {
-      gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
-      gameExecutableWatcher.onDidCreate(() => globalCatalog.refresh());
-      gameExecutableWatcher.onDidDelete(() => globalCatalog.refresh());
-      gameExecutableWatcher.onDidChange(() => globalCatalog.refresh());
+      createGameExecutableWatcher();
     }
     if (this.refreshPromise) return this.refreshPromise;
 
@@ -635,7 +644,7 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
 
   const output = vscode.window.createOutputChannel(`Dagor Build: ${project.label}`);
   output.show(true);
-  output.appendLine(`Running: ${script} ${selected.join(' ')}`);
+  output.appendLine(`[DAGOR_PM] Running: ${script} ${selected.join(' ')}`);
   const python = vscode.workspace.getConfiguration('dagorProjectManager').get('pythonExecutable') || 'python';
   const child = spawn(python, [script, ...selected], {
     cwd: path.dirname(script),
@@ -644,6 +653,8 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
   onBuildStateChange(true);
   if (gameExecutableWatcher) {
     gameExecutableWatcher.dispose();
+    output.appendLine('[DAGOR_PM] Disposed game executable watcher (**/game/**/*.exe) for build.');
+    gameExecutableWatcherOutput = output;
     gameExecutableWatcher = undefined;
   }
   child.stdout?.on('data', data => output.append(data.toString()));
@@ -654,21 +665,18 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
     finished = true;
     runningBuilds.delete(key);
     onBuildStateChange(false);
-    if (!gameExecutableWatcher && globalCatalog) {
-      gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
-      gameExecutableWatcher.onDidCreate(() => globalCatalog.refresh());
-      gameExecutableWatcher.onDidDelete(() => globalCatalog.refresh());
-      gameExecutableWatcher.onDidChange(() => globalCatalog.refresh());
+    if (!gameExecutableWatcher && runningBuilds.size === 0 && globalCatalog) {
+      createGameExecutableWatcher(output);
     }
   };
   runningBuilds.set(key, { child, finishBuild, output });
   child.once('error', error => {
-    output.appendLine(`\nFailed to start build: ${error.message}`);
+    output.appendLine(`\n[DAGOR_PM] Failed to start build: ${error.message}`);
     vscode.window.showErrorMessage(`Failed to start Dagor build: ${error.message}`);
     finishBuild();
   });
   child.once('exit', (code, signal) => {
-    output.appendLine(`\nBuild finished with ${signal ? `signal ${signal}` : `exit code ${code}`}.`);
+    output.appendLine(`\n[DAGOR_PM] Build finished with ${signal ? `signal ${signal}` : `exit code ${code}`}.`);
     finishBuild();
   });
   child.once('close', finishBuild);
@@ -682,7 +690,7 @@ function stopBuild(project, onBuildStateChange = () => {}) {
     return;
   }
 
-  build.output.appendLine('\nBuild cancellation requested.');
+  build.output.appendLine('\n[DAGOR_PM] Build cancellation requested.');
   const stopped = process.platform === 'win32'
     ? spawn('taskkill', ['/pid', String(build.child.pid), '/t', '/f'], { windowsHide: true })
     : (build.child.kill('SIGTERM'), undefined);
@@ -702,6 +710,7 @@ function activate(context) {
 
   const catalog = new ProjectCatalog();
   globalCatalog = catalog;
+  extensionSubscriptions = context.subscriptions;
   const provider = new ProjectWebviewProvider(catalog);
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
@@ -720,11 +729,7 @@ function activate(context) {
   context.subscriptions.push(watcher.onDidCreate(() => catalog.refresh()));
   context.subscriptions.push(watcher.onDidDelete(() => catalog.refresh()));
   context.subscriptions.push(watcher.onDidChange(() => catalog.refresh()));
-  gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
-  context.subscriptions.push(gameExecutableWatcher);
-  context.subscriptions.push(gameExecutableWatcher.onDidCreate(() => catalog.refresh()));
-  context.subscriptions.push(gameExecutableWatcher.onDidDelete(() => catalog.refresh()));
-  context.subscriptions.push(gameExecutableWatcher.onDidChange(() => catalog.refresh()));
+  createGameExecutableWatcher();
   const gameCommandWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.cmd');
   context.subscriptions.push(gameCommandWatcher);
   context.subscriptions.push(gameCommandWatcher.onDidCreate(() => catalog.refresh()));
