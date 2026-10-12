@@ -23,6 +23,8 @@ const ICON_PATHS = {
   terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>'
 };
 const runningBuilds = new Map();
+let gameExecutableWatcher = undefined;
+let globalCatalog = undefined;
 
 function iconSvg(name, className = '') {
   const classes = ['icon', className].filter(Boolean).join(' ');
@@ -225,6 +227,12 @@ class ProjectCatalog {
   }
 
   refresh() {
+    if (!gameExecutableWatcher && runningBuilds.size === 0 && globalCatalog) {
+      gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
+      gameExecutableWatcher.onDidCreate(() => globalCatalog.refresh());
+      gameExecutableWatcher.onDidDelete(() => globalCatalog.refresh());
+      gameExecutableWatcher.onDidChange(() => globalCatalog.refresh());
+    }
     if (this.refreshPromise) return this.refreshPromise;
 
     this.projects = [];
@@ -634,6 +642,10 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
     windowsHide: true
   });
   onBuildStateChange(true);
+  if (gameExecutableWatcher) {
+    gameExecutableWatcher.dispose();
+    gameExecutableWatcher = undefined;
+  }
   child.stdout?.on('data', data => output.append(data.toString()));
   child.stderr?.on('data', data => output.append(data.toString()));
   let finished = false;
@@ -642,6 +654,12 @@ function buildProject(project, components, onBuildStateChange = () => {}) {
     finished = true;
     runningBuilds.delete(key);
     onBuildStateChange(false);
+    if (!gameExecutableWatcher && globalCatalog) {
+      gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
+      gameExecutableWatcher.onDidCreate(() => globalCatalog.refresh());
+      gameExecutableWatcher.onDidDelete(() => globalCatalog.refresh());
+      gameExecutableWatcher.onDidChange(() => globalCatalog.refresh());
+    }
   };
   runningBuilds.set(key, { child, finishBuild, output });
   child.once('error', error => {
@@ -683,6 +701,7 @@ function activate(context) {
   }
 
   const catalog = new ProjectCatalog();
+  globalCatalog = catalog;
   const provider = new ProjectWebviewProvider(catalog);
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
@@ -701,7 +720,7 @@ function activate(context) {
   context.subscriptions.push(watcher.onDidCreate(() => catalog.refresh()));
   context.subscriptions.push(watcher.onDidDelete(() => catalog.refresh()));
   context.subscriptions.push(watcher.onDidChange(() => catalog.refresh()));
-  const gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
+  gameExecutableWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.exe');
   context.subscriptions.push(gameExecutableWatcher);
   context.subscriptions.push(gameExecutableWatcher.onDidCreate(() => catalog.refresh()));
   context.subscriptions.push(gameExecutableWatcher.onDidDelete(() => catalog.refresh()));
