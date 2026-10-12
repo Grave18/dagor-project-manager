@@ -500,7 +500,7 @@ class ProjectWebviewProvider {
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
       <meta name="viewport" content="width=device-width,initial-scale=1.0"><style>
         :root{color-scheme:light dark}*{box-sizing:border-box}[hidden]{display:none!important}body{padding:6px 8px;color:var(--vscode-foreground);font:13px var(--vscode-font-family)}
-        .icon{display:block;width:16px;height:16px;flex:0 0 16px;stroke-width:1.8}.toolbar{display:flex;justify-content:flex-end;margin:0 0 2px}.icon-button{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;color:var(--vscode-foreground);background:transparent;border:1px solid transparent;border-radius:4px;font:inherit;cursor:pointer}.icon-button:hover{background:var(--vscode-button-hoverBackground,var(--vscode-button-background))}.icon-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
+        .icon{display:block;width:16px;height:16px;flex:0 0 16px;stroke-width:1.8}.toolbar{display:flex;justify-content:flex-end;margin:0 0 2px}.icon-button{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;color:var(--vscode-foreground);background:transparent;border:1px solid transparent;border-radius:4px;font:inherit;cursor:pointer}.icon-button:hover{background:var(--vscode-button-hoverBackground,var(--vscode-button-background))}.icon-button:disabled,.action:disabled,.scene:disabled,.build-submit:disabled{opacity:0.5;cursor:not-allowed!important;filter:brightness(0.8)}.icon-button:disabled:hover,.action:disabled:hover,.scene:disabled:hover,.build-submit:disabled:hover{background:transparent!important}.icon-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
         .project-row,.action,.scene,.build-submit{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         .project-list{display:grid;gap:1px}.project-row{width:100%;display:flex;align-items:center;gap:7px;padding:3px 6px;text-align:left;border-radius:4px;min-height:25px;overflow:hidden}.project-row:hover,.project-row.selected{background:var(--vscode-list-hoverBackground)}
         .project-name{font-weight:600}.project-row small,.scene small{margin-left:auto;color:var(--vscode-descriptionForeground);font-size:11px}.chevron-icon{width:16px;height:16px;flex:0 0 16px;color:var(--vscode-descriptionForeground);transform-origin:center}.chevron-icon.expanded,.end-chevron.expanded{transform:rotate(90deg)}.chevron-icon.animate-expand{animation:project-chevron-expand 260ms cubic-bezier(.2,.75,.25,1) both}.chevron-icon.animate-collapse{animation:project-chevron-collapse 260ms cubic-bezier(.2,.75,.25,1) both}@keyframes project-chevron-expand{0%{transform:rotate(0) scale(.85)}68%{transform:rotate(98deg) scale(1.08)}100%{transform:rotate(90deg) scale(1)}}@keyframes project-chevron-collapse{0%{transform:rotate(90deg) scale(1)}68%{transform:rotate(-8deg) scale(1.08)}100%{transform:rotate(0) scale(1)}}.project-icon{color:var(--vscode-charts-blue)}
@@ -509,16 +509,24 @@ class ProjectWebviewProvider {
         .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
         @media(prefers-reduced-motion:reduce){.chevron-icon.animate-expand,.chevron-icon.animate-collapse,.end-chevron{animation:none!important;transition:none!important}}
         @media(max-width:560px){.action-grid{grid-template-columns:1fr}.components{grid-column:1;grid-row:auto}.project-actions{margin-left:4px}.project-row small,.scene small{display:none}}
-      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects">${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div>${projectActions}</main>
+      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div>${projectActions}</main>
       <script nonce="${nonce}">
         const vscode=acquireVsCodeApi();
         const projectFor=element=>JSON.parse(element.closest('.project-actions').dataset.projectData);
-        document.getElementById('refresh').addEventListener('click',()=>vscode.postMessage({type:'refresh'}));
+        document.getElementById('refresh').addEventListener('click',()=>{
+  if(document.getElementById('refresh').disabled)return;
+  vscode.postMessage({type:'refresh'});
+});
+const blockButtonsFor2s=()=>{
+  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command]');
+  buttons.forEach(btn=>btn.disabled=true);
+  setTimeout(()=>buttons.forEach(btn=>btn.disabled=false),5000);
+};
         document.addEventListener('click',event=>{
           const select=event.target.closest('[data-select]');if(select){vscode.postMessage({type:'selectProject',project:select.dataset.select});return;}
-          const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});return;}
-          const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});return;}
-          const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});return;}
+          const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
+          const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
+          const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
           const button=event.target.closest('[data-action]');if(!button)return;
           if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
             const content=button.nextElementSibling;
@@ -552,6 +560,7 @@ class ProjectWebviewProvider {
           const project=projectFor(button);
           const action=button.dataset.action;
           vscode.postMessage(action==='stop'?{type:'stopBuild',project}:{type:'action',action,project});
+          if(action!=='build'&&action!=='submitBuild')blockButtonsFor2s();
         });
         window.addEventListener('message',event=>{
           const message=event.data;
