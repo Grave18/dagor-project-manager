@@ -9,6 +9,9 @@
   ],
   "version": "0.1.0",
   "publisher": "project-stalker",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -52,6 +55,26 @@
       {
         "command": "dagorProjectManager.refreshProjects",
         "title": "Refresh Dagor Projects"
+      },
+      {
+        "command": "dagorProjectManager.folderBuildAll",
+        "title": "Build All"
+      },
+      {
+        "command": "dagorProjectManager.folderOpenDaViewer",
+        "title": "Open daViewer"
+      },
+      {
+        "command": "dagorProjectManager.folderOpenScene",
+        "title": "Open Scene"
+      },
+      {
+        "command": "dagorProjectManager.folderRunGame",
+        "title": "Run Game"
+      },
+      {
+        "command": "dagorProjectManager.folderRunCommand",
+        "title": "Run Command"
       }
     ],
     "viewsContainers": {
@@ -76,9 +99,36 @@
     "menus": {
       "explorer/context": [
         {
+          "submenu": "dagorProjectManager.projectFolderContext",
+          "when": "resourceScheme == file && explorerResourceIsFolder && resource in dagorProjectManager.projectFolders",
+          "group": "navigation"
+        },
+        {
           "submenu": "dagorProjectManager.blkContext",
           "when": "resourceFilename =~ /\\.blk$/i",
           "group": "navigation"
+        }
+      ],
+      "dagorProjectManager.projectFolderContext": [
+        {
+          "command": "dagorProjectManager.folderBuildAll",
+          "group": "1_dagor"
+        },
+        {
+          "command": "dagorProjectManager.folderOpenDaViewer",
+          "group": "2_dagor"
+        },
+        {
+          "command": "dagorProjectManager.folderOpenScene",
+          "group": "3_dagor"
+        },
+        {
+          "command": "dagorProjectManager.folderRunGame",
+          "group": "4_dagor"
+        },
+        {
+          "command": "dagorProjectManager.folderRunCommand",
+          "group": "5_dagor"
         }
       ],
       "dagorProjectManager.blkContext": [
@@ -100,6 +150,10 @@
       ]
     },
     "submenus": [
+      {
+        "id": "dagorProjectManager.projectFolderContext",
+        "label": "Dagor Project Manager"
+      },
       {
         "id": "dagorProjectManager.blkContext",
         "label": "Dagor Project Manager"

@@ -18,6 +18,8 @@ The list of projects, scenes, and game executables updates when files are create
 
 In the Explorer menu:
 
+- discovered Dagor project folders → **Dagor Project Manager** with **Build All**, **Open daViewer**, **Open Scene**, **Run Game**, and **Run Command**; the submenu is hidden on other folders, and scene, game, and command choices appear in a searchable VS Code Quick Pick;
+- project folders are matched by full path, so unrelated folders (including ancestors that merely contain a project) do not show this submenu; nested projects and project folders opened directly as workspace folders are supported.
 - any `.blk`, including `.folder.blk` → **Open with Dagor blkEditor**;
 - `application.blk` → also **Open with Dagor daEditor** and **Open with Dagor daViewer**;
 - `*.level.blk` → also **Open with Dagor daEditor**.

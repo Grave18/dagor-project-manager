@@ -23,6 +23,7 @@ const ICON_PATHS = {
   terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>'
 };
 const runningBuilds = new Map();
+const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 let gameExecutableWatcher = undefined;
 let globalCatalog = undefined;
 let extensionSubscriptions = undefined;
@@ -419,25 +420,9 @@ class ProjectWebviewProvider {
         : project?.scenes.find(item => item.uri.fsPath === message.scene)?.uri.fsPath;
       if (scenePath) await openSceneInDaEditor(vscode.Uri.file(scenePath));
     } else if (message.type === 'runGame') {
-      const game = project?.games.find(item => item.executable === message.executable);
-      if (!game) {
-        vscode.window.showErrorMessage('Select a valid game executable for this project.');
-        return;
-      }
-      launch(game.executable, [], path.join(project.root, 'game'), { detached: false, windowsHide: false });
+      runProjectGame(project, message.executable);
     } else if (message.type === 'runGameCommand') {
-      const command = project?.gameCommands.find(item => item.command === message.command);
-      if (!command) {
-        vscode.window.showErrorMessage('Select a valid game command for this project.');
-        return;
-      }
-      const terminal = vscode.window.createTerminal({
-        name: `Dagor: ${command.label}`,
-        cwd: path.join(project.root, 'game'),
-        shellPath: process.env.ComSpec || 'cmd.exe'
-      });
-      terminal.show(true);
-      terminal.sendText(`call "${command.command}"`, true);
+      runProjectGameCommand(project, message.command);
     } else if (message.type === 'stopBuild') {
       stopBuild(project || projectData, running => {
         if (this.view) this.view.webview.postMessage({
@@ -599,6 +584,116 @@ function getWorkspaceRoots() {
   return (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
 }
 
+function isPathWithin(directory, candidate) {
+  const relative = path.relative(directory, candidate);
+  return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+}
+
+async function findProjectForFolder(folderUri) {
+  if (!folderUri || folderUri.scheme !== 'file') {
+    vscode.window.showErrorMessage('Select a local Dagor project folder in the VS Code Explorer.');
+    return undefined;
+  }
+
+  try {
+    await globalCatalog.refresh();
+  } catch (error) {
+    vscode.window.showErrorMessage(`Failed to find Dagor projects: ${error.message}`);
+    return undefined;
+  }
+
+  const folder = path.resolve(folderUri.fsPath);
+  const containingProjects = globalCatalog.projects
+    .filter(project => isPathWithin(path.resolve(project.root), folder))
+    .sort((left, right) => right.root.length - left.root.length);
+  if (containingProjects.length > 0) return containingProjects[0];
+
+  const nestedProjects = globalCatalog.projects.filter(project => isPathWithin(folder, path.resolve(project.root)));
+  if (nestedProjects.length === 1) return nestedProjects[0];
+  if (nestedProjects.length > 1) {
+    const selection = await vscode.window.showQuickPick(
+      nestedProjects.map(project => ({
+        label: project.label,
+        description: path.relative(folder, project.root),
+        project
+      })),
+      { placeHolder: 'Select a Dagor project in this folder', matchOnDescription: true }
+    );
+    return selection?.project;
+  }
+
+  vscode.window.showErrorMessage(`No Dagor project found in or under ${folder}.`);
+  return undefined;
+}
+
+function runProjectGame(project, executable) {
+  const game = project.games.find(item => item.executable === executable);
+  if (!game) {
+    vscode.window.showErrorMessage('Select a valid game executable for this project.');
+    return;
+  }
+  launch(game.executable, [], path.join(project.root, 'game'), { detached: false, windowsHide: false });
+}
+
+function runProjectGameCommand(project, commandPath) {
+  const command = project.gameCommands.find(item => item.command === commandPath);
+  if (!command) {
+    vscode.window.showErrorMessage('Select a valid game command for this project.');
+    return;
+  }
+  const terminal = vscode.window.createTerminal({
+    name: `Dagor: ${command.label}`,
+    cwd: path.join(project.root, 'game'),
+    shellPath: process.env.ComSpec || 'cmd.exe'
+  });
+  terminal.show(true);
+  terminal.sendText(`call "${command.command}"`, true);
+}
+
+async function pickProjectItem(items, placeHolder) {
+  if (items.length === 0) {
+    vscode.window.showInformationMessage(`No entries available. ${placeHolder}.`);
+    return undefined;
+  }
+  return vscode.window.showQuickPick(items, { placeHolder, matchOnDescription: true });
+}
+
+async function openProjectScene(project) {
+  const selection = await pickProjectItem(
+    project.scenes.map(scene => ({
+      label: scene.label,
+      description: scene.relativePath,
+      uri: scene.uri
+    })),
+    `Select a scene in ${project.label}`
+  );
+  if (selection) await openSceneInDaEditor(selection.uri);
+}
+
+async function pickProjectGame(project) {
+  const selection = await pickProjectItem(
+    project.games.map(game => ({
+      label: game.label,
+      description: path.relative(project.root, game.executable),
+      executable: game.executable
+    })),
+    `Select a game to run in ${project.label}`
+  );
+  if (selection) runProjectGame(project, selection.executable);
+}
+
+async function pickProjectGameCommand(project) {
+  const selection = await pickProjectItem(
+    project.gameCommands.map(command => ({
+      label: command.label,
+      description: path.relative(project.root, command.command),
+      command: command.command
+    })),
+    `Select a command to run in ${project.label}`
+  );
+  if (selection) runProjectGameCommand(project, selection.command);
+}
+
 function getToolsDirectory(config) {
   return config.get('toolsDirectory') || process.env.DAGOR_CDK_DIR ||
     getWorkspaceRoots().map(findToolsDirectory).find(Boolean);
@@ -711,6 +806,15 @@ function activate(context) {
   const catalog = new ProjectCatalog();
   globalCatalog = catalog;
   extensionSubscriptions = context.subscriptions;
+  context.subscriptions.push(catalog.onDidChange.event(projects => {
+    const projectFolders = Object.fromEntries(
+      projects.map(project => [vscode.Uri.file(path.resolve(project.root)).toString(), true])
+    );
+    vscode.commands.executeCommand('setContext', PROJECT_FOLDERS_CONTEXT, projectFolders)
+      .then(undefined, error => {
+        vscode.window.showErrorMessage(`Failed to update Dagor project folder menu: ${error.message}`);
+      });
+  }));
   const provider = new ProjectWebviewProvider(catalog);
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
@@ -720,6 +824,29 @@ function activate(context) {
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.openSceneWithDaEditor', openSceneInDaEditor));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.openProjectWithDaViewer', openProjectDaViewer));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildProject', buildProject));
+  const folderActions = [
+    ['dagorProjectManager.folderBuildAll', project => buildProject(
+      project,
+      BUILD_COMPONENTS.map(component => component.value),
+      running => {
+        if (provider.view) provider.view.webview.postMessage({
+          type: 'buildState',
+          project: project.applicationFile,
+          running
+        });
+      }
+    )],
+    ['dagorProjectManager.folderOpenDaViewer', openProjectDaViewer],
+    ['dagorProjectManager.folderOpenScene', openProjectScene],
+    ['dagorProjectManager.folderRunGame', pickProjectGame],
+    ['dagorProjectManager.folderRunCommand', pickProjectGameCommand]
+  ];
+  for (const [command, action] of folderActions) {
+    context.subscriptions.push(vscode.commands.registerCommand(command, async folderUri => {
+      const project = await findProjectForFolder(folderUri);
+      if (project) await action(project);
+    }));
+  }
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.generateProject', project => {
     vscode.window.showInformationMessage(`Project generation for ${project?.label || 'Dagor'} is not implemented yet.`);
   }));
@@ -739,6 +866,10 @@ function activate(context) {
   context.subscriptions.push(applicationWatcher);
   context.subscriptions.push(applicationWatcher.onDidCreate(() => catalog.refresh()));
   context.subscriptions.push(applicationWatcher.onDidDelete(() => catalog.refresh()));
+  const buildScriptWatcher = vscode.workspace.createFileSystemWatcher('**/build.py');
+  context.subscriptions.push(buildScriptWatcher);
+  context.subscriptions.push(buildScriptWatcher.onDidCreate(() => catalog.refresh()));
+  context.subscriptions.push(buildScriptWatcher.onDidDelete(() => catalog.refresh()));
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => catalog.refresh()));
   catalog.refresh();
 }

@@ -3,6 +3,7 @@ const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const Module = require('node:module');
 const childProcess = require('node:child_process');
 const test = require('node:test');
@@ -14,7 +15,10 @@ const errors = [];
 const messages = [];
 const launches = [];
 const providers = new Map();
+const contextKeys = new Map();
 const roots = [];
+const watcherPatterns = [];
+const quickPicks = [];
 let workspaceRoot;
 let toolsDirectory;
 let sceneFiles = [];
@@ -23,6 +27,7 @@ let outputChannel;
 let fakeChild;
 let webviewView;
 let fakeTerminal;
+let quickPickSelection;
 const terminals = [];
 
 class FakeEventEmitter {
@@ -45,9 +50,17 @@ class FakeOutputChannel {
 
 const vscode = {
   EventEmitter: FakeEventEmitter,
-  Uri: { file: fsPath => ({ scheme: 'file', fsPath }) },
+  Uri: { file: fsPath => ({
+    scheme: 'file',
+    fsPath,
+    toString: () => pathToFileURL(fsPath).toString()
+  }) },
   RelativePattern: class { constructor(base, pattern) { this.base = base; this.pattern = pattern; } },
   commands: {
+    executeCommand(command, key, value) {
+      if (command === 'setContext') contextKeys.set(key, value);
+      return Promise.resolve();
+    },
     registerCommand(name, callback) {
       commands.set(name, callback);
       return { dispose() {} };
@@ -73,7 +86,8 @@ const vscode = {
         .filter(file => !pattern.base || path.resolve(file).startsWith(`${path.resolve(pattern.base)}${path.sep}`))
         .map(fsPath => ({ scheme: 'file', fsPath }));
     },
-    createFileSystemWatcher() {
+    createFileSystemWatcher(pattern) {
+      watcherPatterns.push(pattern);
       return {
         onDidCreate: () => ({ dispose() {} }),
         onDidDelete: () => ({ dispose() {} }),
@@ -86,6 +100,10 @@ const vscode = {
   window: {
     showErrorMessage(message) { errors.push(message); },
     showInformationMessage(message) { messages.push(message); },
+    showQuickPick(items, options) {
+      quickPicks.push({ items, options });
+      return Promise.resolve(items.find(item => item.label === quickPickSelection) || items[0]);
+    },
     createOutputChannel() {
       outputChannel = new FakeOutputChannel();
       return outputChannel;
@@ -214,6 +232,8 @@ afterEach(() => {
   fakeChild = undefined;
   fakeTerminal = undefined;
   terminals.length = 0;
+  quickPicks.length = 0;
+  quickPickSelection = undefined;
 });
 
 test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
@@ -221,6 +241,7 @@ test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
 test('uses the Dagor Project Manager name and application icons in its metadata', () => {
   assert.equal(extensionManifest.name, 'dagor-project-manager');
   assert.equal(extensionManifest.displayName, 'Dagor Project Manager');
+  assert.ok(extensionManifest.activationEvents.includes('onStartupFinished'));
   assert.equal(extensionManifest.contributes.configuration.title, 'Dagor Project Manager');
   assert.equal(extensionManifest.contributes.viewsContainers.activitybar[0].title, 'Dagor Project Manager');
   assert.equal(extensionManifest.contributes.submenus[0].label, 'Dagor Project Manager');
@@ -255,11 +276,81 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.openSceneWithDaEditor',
     'dagorProjectManager.openProjectWithDaViewer',
     'dagorProjectManager.buildProject',
+    'dagorProjectManager.folderBuildAll',
+    'dagorProjectManager.folderOpenDaViewer',
+    'dagorProjectManager.folderOpenScene',
+    'dagorProjectManager.folderRunGame',
+    'dagorProjectManager.folderRunCommand',
     'dagorProjectManager.generateProject'
   ]);
   assert.ok(providers.has('dagorProjectManager.projects'));
   assert.equal(webviewView.webview.options.enableScripts, true);
+  assert.ok(watcherPatterns.includes('**/build.py'));
   assert.ok(!extensionManifest.contributes.menus['view/title']?.some(item => item.command === 'dagorProjectManager.refreshProjects'));
+  assert.ok(extensionManifest.contributes.menus['explorer/context'].some(item =>
+    item.submenu === 'dagorProjectManager.projectFolderContext' &&
+    item.when === 'resourceScheme == file && explorerResourceIsFolder && resource in dagorProjectManager.projectFolders'
+  ));
+  assert.deepEqual(
+    extensionManifest.contributes.menus['dagorProjectManager.projectFolderContext'].map(item => item.command),
+    [
+      'dagorProjectManager.folderBuildAll',
+      'dagorProjectManager.folderOpenDaViewer',
+      'dagorProjectManager.folderOpenScene',
+      'dagorProjectManager.folderRunGame',
+      'dagorProjectManager.folderRunCommand'
+    ]
+  );
+});
+
+test('limits the folder context submenu to discovered Dagor project roots', async () => {
+  await refreshCatalog();
+  const projectFolders = contextKeys.get('dagorProjectManager.projectFolders');
+  const projectResources = [outerSpaceRoot, workspaceRoot].map(folder => pathToFileURL(folder).toString());
+  assert.deepEqual(Object.keys(projectFolders).sort(), projectResources.sort());
+  assert.ok(!Object.hasOwn(projectFolders, pathToFileURL(path.join(workspaceRoot, 'develop')).toString()));
+  assert.ok(!Object.hasOwn(projectFolders, pathToFileURL(path.join(tempDirectory, 'unrelated-folder')).toString()));
+});
+
+test('runs project-folder actions against the project under the Explorer selection', async () => {
+  quickPickSelection = 'outerSpace';
+  await commands.get('dagorProjectManager.folderOpenDaViewer')(uri(path.dirname(workspaceRoot)));
+  assert.deepEqual(quickPicks[0].items.map(item => item.label), ['outerSpace', 'project_stalker']);
+  assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'assetViewer2-dev.exe'));
+  assert.deepEqual(launches.at(-1).args, [outerSpaceApplication]);
+
+  quickPickSelection = 'sample';
+  await commands.get('dagorProjectManager.folderOpenScene')(uri(outerSpaceRoot));
+  assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['sample']);
+  assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'daEditor3x-dev.exe'));
+  assert.deepEqual(launches.at(-1).args, [outerSpaceApplication, outerSpaceLevelFile]);
+
+  quickPickSelection = 'project_stalker';
+  await commands.get('dagorProjectManager.folderRunGame')(uri(workspaceRoot));
+  assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['direct-game', 'project_stalker-dev', 'stalker']);
+  assert.equal(launches.at(-1).executable, gameExe);
+  assert.deepEqual(launches.at(-1).args, []);
+  assert.equal(launches.at(-1).options.cwd, gameDirectory);
+
+  await commands.get('dagorProjectManager.folderRunCommand')(uri(workspaceRoot));
+  assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['direct-run-stalker', 'run-custom']);
+  assert.equal(fakeTerminal.options.cwd, gameDirectory);
+  assert.deepEqual(fakeTerminal.sent, [{ text: `call "${directRunCommand}"`, addNewLine: true }]);
+});
+
+test('Build All runs every available build component for the selected project folder', async () => {
+  await commands.get('dagorProjectManager.folderBuildAll')(uri(outerSpaceRoot));
+  assert.equal(launches.at(-1).executable, 'python');
+  assert.deepEqual(launches.at(-1).args, [
+    path.join(outerSpaceProg, 'build.py'),
+    'code',
+    'shaders',
+    'assets',
+    'vromfs',
+    'gui'
+  ]);
+  assert.equal(launches.at(-1).options.cwd, outerSpaceProg);
+  fakeChild.emit('exit', 0, null);
 });
 
 test('opens any BLK, including .folder.blk, in blkEditor', async () => {
