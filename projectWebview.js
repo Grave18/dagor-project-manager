@@ -202,7 +202,7 @@ class ProjectWebviewProvider {
           <span class="game-icon">${iconSvg('play')}</span><span>${escapeHtml(game.label)}</span><small>${escapeHtml(path.relative(project.root, game.executable))}</small>
         </button>`).join('');
       const gameCommands = project.gameCommands.map(command => `
-        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" title="${escapeHtml(command.command)}">
+        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" title="${escapeHtml(command.invocation || command.command)}">
           <span class="command-icon">${iconSvg('terminal')}</span><span>${escapeHtml(command.label)}</span><small>${escapeHtml(path.relative(project.root, command.command))}</small>
         </button>`).join('');
       const buildItems = BUILD_COMPONENTS.map(item => `

@@ -54,7 +54,27 @@ function findGameExecutables(projectRoot) {
 
 function findGameCommandFiles(projectRoot) {
   return findGameFiles(projectRoot, '.cmd', false)
-    .map(item => ({ command: item.file, label: item.label }));
+    .map(item => ({ command: item.file, label: item.label, ...findGameCommandInvocation(item.file) }));
+}
+
+function findGameCommandInvocation(commandFile) {
+  let contents;
+  try {
+    contents = fs.readFileSync(commandFile, 'utf8');
+  } catch {
+    return { invocation: undefined };
+  }
+
+  const lines = contents.replace(/\^\s*\r?\n\s*/g, ' ').split(/\r?\n/);
+  for (const line of lines) {
+    const match = line.match(/^\s*@?(?:start\s+(?:"[^"]*"\s+)?|call\s+)?(?:"([^\"]+\.exe)"|([^\s"]+\.exe))(?=\s|$)(.*)$/i);
+    if (!match) continue;
+    const executable = path.basename(match[1] || match[2]);
+    const args = match[3].trim();
+    return { invocation: [executable, args].filter(Boolean).join(' ') };
+  }
+
+  return { invocation: undefined };
 }
 
 class ProjectCatalog {
