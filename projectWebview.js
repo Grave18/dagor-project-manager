@@ -48,6 +48,7 @@ class ProjectWebviewProvider {
     this.actions = actions;
     this.view = undefined;
     this.selectedProject = undefined;
+    this.contextTargetPath = undefined;
     this.projectChevronAnimations = new Map();
     this.animateProjectPanel = false;
     this.projectPanelFromHeight = undefined;
@@ -87,6 +88,10 @@ class ProjectWebviewProvider {
   async handleMessage(message) {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'ready') return;
+    if (message.type === 'setContextTarget') {
+      this.setContextTarget(message.target);
+      return;
+    }
     if (message.type === 'refresh') {
       await this.catalog.refresh();
       return;
@@ -162,6 +167,36 @@ class ProjectWebviewProvider {
     }
   }
 
+  setContextTarget(target) {
+    this.contextTargetPath = undefined;
+    const project = this.catalog.projects.find(item => item.applicationFile === target?.project);
+    if (!project) return;
+
+    if (target.kind === 'project') {
+      this.contextTargetPath = project.root;
+    } else if (target.kind === 'scene') {
+      this.contextTargetPath = project.scenes.find(item => item.uri.fsPath === target.path)?.uri.fsPath;
+    } else if (target.kind === 'game') {
+      this.contextTargetPath = project.games.find(item => item.executable === target.path)?.executable;
+    } else if (target.kind === 'command') {
+      this.contextTargetPath = project.gameCommands.find(item => item.command === target.path)?.command;
+    }
+  }
+
+  async revealContextTarget() {
+    const targetPath = this.contextTargetPath;
+    this.contextTargetPath = undefined;
+    if (!targetPath) return;
+    await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(targetPath));
+  }
+
+  async revealContextTargetInOS() {
+    const targetPath = this.contextTargetPath;
+    this.contextTargetPath = undefined;
+    if (!targetPath) return;
+    await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(targetPath));
+  }
+
   getHtml() {
     const nonce = crypto.randomBytes(16).toString('hex');
     const projectRows = this.catalog.projects.map(project => {
@@ -171,7 +206,7 @@ class ProjectWebviewProvider {
       const chevronClasses = ['chevron-icon', selected ? 'expanded' : '', chevronAnimation ? `animate-${chevronAnimation}` : '']
         .filter(Boolean).join(' ');
       return `
-        <button type="button" class="project-row ${selected ? 'selected' : ''}" data-select="${projectId}" aria-pressed="${selected}">
+        <button type="button" class="project-row ${selected ? 'selected' : ''}" data-select="${projectId}" data-context-kind="project" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"project","preventDefaultContextMenuItems":true}' aria-pressed="${selected}">
           <span class="${chevronClasses}">${iconSvg('chevron')}</span><span class="project-icon">${iconSvg('folder')}</span>
           <span class="project-name">${escapeHtml(project.label)}</span><small>${escapeHtml(getProjectDisplayPath(project))}</small>
         </button>`;
@@ -194,15 +229,15 @@ class ProjectWebviewProvider {
         scenes: project.scenes.map(scene => ({ uri: scene.uri.fsPath, label: scene.label }))
       }));
       const scenes = project.scenes.map(scene => `
-        <button type="button" class="scene" data-scene="${escapeHtml(scene.uri.fsPath)}" title="${escapeHtml(scene.uri.fsPath)}">
+        <button type="button" class="scene" data-scene="${escapeHtml(scene.uri.fsPath)}" data-context-kind="scene" data-context-project="${projectId}" data-context-path="${escapeHtml(scene.uri.fsPath)}" data-vscode-context='{"webviewSection":"resource","preventDefaultContextMenuItems":true}' title="${escapeHtml(scene.uri.fsPath)}">
           <span class="scene-icon">${iconSvg('scene')}</span><span>${escapeHtml(scene.label)}</span><small>${escapeHtml(scene.relativePath)}</small>
         </button>`).join('');
       const games = project.games.map(game => `
-        <button type="button" class="scene game" data-game="${escapeHtml(game.executable)}" title="${escapeHtml(game.executable)}">
+        <button type="button" class="scene game" data-game="${escapeHtml(game.executable)}" data-context-kind="game" data-context-project="${projectId}" data-context-path="${escapeHtml(game.executable)}" data-vscode-context='{"webviewSection":"resource","preventDefaultContextMenuItems":true}' title="${escapeHtml(game.executable)}">
           <span class="game-icon">${iconSvg('play')}</span><span>${escapeHtml(game.label)}</span><small>${escapeHtml(path.relative(project.root, game.executable))}</small>
         </button>`).join('');
       const gameCommands = project.gameCommands.map(command => `
-        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" title="${escapeHtml(command.invocation || command.command)}">
+        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" data-context-kind="command" data-context-project="${projectId}" data-context-path="${escapeHtml(command.command)}" data-vscode-context='{"webviewSection":"resource","preventDefaultContextMenuItems":true}' title="${escapeHtml(command.invocation || command.command)}">
           <span class="command-icon">${iconSvg('terminal')}</span><span>${escapeHtml(command.label)}</span><small>${escapeHtml(path.relative(project.root, command.command))}</small>
         </button>`).join('');
       const buildItems = BUILD_COMPONENTS.map(item => `
@@ -278,6 +313,14 @@ class ProjectWebviewProvider {
             vscode.postMessage({type:'selectProject',project:projectId,fromHeight});
           }
         };
+        document.addEventListener('contextmenu',event=>{
+          const item=event.target.closest('[data-context-kind]');
+          vscode.postMessage({type:'setContextTarget',target:item?{
+            kind:item.dataset.contextKind,
+            project:item.dataset.contextProject,
+            path:item.dataset.contextPath
+          }:null});
+        },true);
         const projectFor=element=>JSON.parse(element.closest('.project-actions').dataset.projectData);
         document.getElementById('refresh').addEventListener('click',()=>{
   if(document.getElementById('refresh').disabled)return;

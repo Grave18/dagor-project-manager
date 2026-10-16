@@ -38,6 +38,10 @@ function activate(context) {
   }));
   const provider = new ProjectWebviewProvider({ catalog, buildManager, actions });
   context.subscriptions.push(provider.disposable);
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTarget', () =>
+    provider.revealContextTarget()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTargetInOS', () =>
+    provider.revealContextTargetInOS()));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
     webviewOptions: { retainContextWhenHidden: true }
   }));

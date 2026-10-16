@@ -57,6 +57,16 @@
         "title": "Refresh Dagor Projects"
       },
       {
+        "command": "dagorProjectManager.revealContextTarget",
+        "title": "Reveal in VS Code",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.revealContextTargetInOS",
+        "title": "Reveal in OS Explorer",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.folderBuildAll",
         "title": "Build All"
       },
@@ -97,6 +107,24 @@
       ]
     },
     "menus": {
+      "webview/context": [
+        {
+          "command": "dagorProjectManager.revealContextTarget",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "group": "navigation@1"
+        },
+        {
+          "command": "dagorProjectManager.revealContextTargetInOS",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "dagorProjectManager.revealContextTarget",
+          "when": "false"
+        }
+      ],
       "explorer/context": [
         {
           "submenu": "dagorProjectManager.projectFolderContext",
