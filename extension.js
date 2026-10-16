@@ -289,17 +289,13 @@ class ProjectCatalog {
         });
       }
 
-      const scenePattern = new vscode.RelativePattern(workspaceRoot, '**/*.level.blk');
-      const sceneFiles = await vscode.workspace.findFiles(scenePattern, exclude);
-      const sceneRoots = [...projects.values()]
-        .filter(project => project.workspaceRoot === workspaceRoot)
-        .sort((left, right) => right.root.length - left.root.length);
-      for (const sceneUri of sceneFiles) {
-        const project = sceneRoots.find(candidate => {
-          const relativePath = path.relative(candidate.root, sceneUri.fsPath);
-          return relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
-        });
-        if (project) {
+      const workspaceProjects = [...projects.values()]
+        .filter(project => project.workspaceRoot === workspaceRoot);
+      for (const project of workspaceProjects) {
+        const levelsRoot = path.join(project.root, 'develop', 'levels');
+        const scenePattern = new vscode.RelativePattern(levelsRoot, '**/*.level.blk');
+        const sceneFiles = await vscode.workspace.findFiles(scenePattern, exclude);
+        for (const sceneUri of sceneFiles) {
           project.scenes.push({
             uri: sceneUri,
             label: path.basename(sceneUri.fsPath, '.level.blk'),
@@ -487,7 +483,7 @@ class ProjectWebviewProvider {
               <div class="components ${running ? 'visible' : ''}"><div class="caption">Select components to build:</div>${buildItems}<button type="button" class="build-submit ${running ? 'running' : ''}" data-action="submitBuild" aria-label="${running ? 'Stop Build' : 'Build'}"><span class="build-icon">${iconSvg('play', 'build-start-icon')}${iconSvg('stop', 'build-stop-icon')}</span> <span class="build-label">${running ? 'Stop Build' : 'Build'}</span></button></div>
               <button type="button" class="action" data-action="viewer">${iconSvg('external')} <span>Open daViewer</span></button>
             </div>
-            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">No scenes found</div>'}</div></div>
+            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
             <div class="scene-group game-group"><button type="button" class="action scene-heading" data-action="toggleGames" aria-expanded="true"><span class="game-heading-icon">${iconSvg('play')}</span><span>Run Game</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-list">${games || '<div class="empty">No game executables found</div>'}</div></div>
             <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">No game command files found</div>'}</div></div>
           </div>
