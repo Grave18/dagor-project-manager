@@ -545,7 +545,7 @@ class ProjectWebviewProvider {
           const panel=document.querySelector('.project-actions');
           if(panel&&panel.dataset.project===projectId&&!prefersReducedMotion&&panel.animate){
             const height=panel.getBoundingClientRect().height;
-            projectPanelAnimation=panel.animate([{height:height+'px',opacity:1,transform:'translateY(0)'},{height:'0px',opacity:0,transform:'translateY(-6px)'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)'});
+            projectPanelAnimation=panel.animate([{height:height+'px',opacity:1,transform:'translateY(0)'},{height:'0px',opacity:0,transform:'translateY(-6px)'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'});
             projectPanelAnimation.onfinish=()=>{projectPanelAnimation=undefined;vscode.postMessage({type:'toggleProject',project:projectId});};
           }else if(panel&&panel.dataset.project===projectId){
             vscode.postMessage({type:'toggleProject',project:projectId});
