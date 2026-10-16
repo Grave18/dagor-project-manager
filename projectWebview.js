@@ -25,6 +25,22 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function getProjectDisplayPath(project) {
+  let directory = path.resolve(project.root);
+  let dagorEngineRoot;
+  while (true) {
+    if (path.basename(directory).toLowerCase() === 'dagorengine') {
+      dagorEngineRoot = directory;
+      break;
+    }
+    const parent = path.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  const base = dagorEngineRoot || project.workspaceRoot;
+  return path.relative(base, project.root) || path.basename(project.root);
+}
+
 class ProjectWebviewProvider {
   constructor({ catalog, buildManager, actions }) {
     this.catalog = catalog;
@@ -157,7 +173,7 @@ class ProjectWebviewProvider {
       return `
         <button type="button" class="project-row ${selected ? 'selected' : ''}" data-select="${projectId}" aria-pressed="${selected}">
           <span class="${chevronClasses}">${iconSvg('chevron')}</span><span class="project-icon">${iconSvg('folder')}</span>
-          <span class="project-name">${escapeHtml(project.label)}</span><small>${escapeHtml(path.relative(project.workspaceRoot, project.root) || '.')}</small>
+          <span class="project-name">${escapeHtml(project.label)}</span><small>${escapeHtml(getProjectDisplayPath(project))}</small>
         </button>`;
     }).join('');
 
