@@ -50,6 +50,8 @@ class ProjectWebviewProvider {
     this.selectedProject = undefined;
     this.contextTargetPath = undefined;
     this.contextTargetName = undefined;
+    this.contextTargetProject = undefined;
+    this.contextTargetKind = undefined;
     this.projectChevronAnimations = new Map();
     this.animateProjectPanel = false;
     this.projectPanelFromHeight = undefined;
@@ -171,6 +173,8 @@ class ProjectWebviewProvider {
   setContextTarget(target) {
     this.contextTargetPath = undefined;
     this.contextTargetName = undefined;
+    this.contextTargetProject = undefined;
+    this.contextTargetKind = undefined;
     const project = this.catalog.projects.find(item => item.applicationFile === target?.project);
     if (!project) return;
 
@@ -190,38 +194,54 @@ class ProjectWebviewProvider {
       this.contextTargetPath = command?.command;
       this.contextTargetName = command?.label;
     }
+    if (this.contextTargetPath) {
+      this.contextTargetProject = project;
+      this.contextTargetKind = target.kind;
+    }
+  }
+
+  takeContextTarget() {
+    const target = {
+      path: this.contextTargetPath,
+      name: this.contextTargetName,
+      project: this.contextTargetProject,
+      kind: this.contextTargetKind
+    };
+    this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
+    this.contextTargetProject = undefined;
+    this.contextTargetKind = undefined;
+    return target;
   }
 
   async revealContextTarget() {
-    const targetPath = this.contextTargetPath;
-    this.contextTargetPath = undefined;
-    this.contextTargetName = undefined;
+    const { path: targetPath } = this.takeContextTarget();
     if (!targetPath) return;
     await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(targetPath));
   }
 
   async revealContextTargetInOS() {
-    const targetPath = this.contextTargetPath;
-    this.contextTargetPath = undefined;
-    this.contextTargetName = undefined;
+    const { path: targetPath } = this.takeContextTarget();
     if (!targetPath) return;
     await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(targetPath));
   }
 
   async copyContextTargetName() {
-    const targetName = this.contextTargetName;
-    this.contextTargetPath = undefined;
-    this.contextTargetName = undefined;
+    const { name: targetName } = this.takeContextTarget();
     if (!targetName) return;
     await vscode.env.clipboard.writeText(targetName);
   }
 
   async copyContextTargetFullname() {
-    const targetPath = this.contextTargetPath;
-    this.contextTargetPath = undefined;
-    this.contextTargetName = undefined;
+    const { path: targetPath } = this.takeContextTarget();
     if (!targetPath) return;
     await vscode.env.clipboard.writeText(targetPath);
+  }
+
+  async runContextSceneInGame() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'scene' || !target.project || !target.path) return;
+    await this.actions.runProjectSceneInGame(target.project, target.path);
   }
 
   getHtml() {
@@ -256,7 +276,7 @@ class ProjectWebviewProvider {
         scenes: project.scenes.map(scene => ({ uri: scene.uri.fsPath, label: scene.label }))
       }));
       const scenes = project.scenes.map(scene => `
-        <button type="button" class="scene" data-scene="${escapeHtml(scene.uri.fsPath)}" data-context-kind="scene" data-context-project="${projectId}" data-context-path="${escapeHtml(scene.uri.fsPath)}" data-vscode-context='{"webviewSection":"resource","preventDefaultContextMenuItems":true}' title="${escapeHtml(scene.uri.fsPath)}">
+        <button type="button" class="scene" data-scene="${escapeHtml(scene.uri.fsPath)}" data-context-kind="scene" data-context-project="${projectId}" data-context-path="${escapeHtml(scene.uri.fsPath)}" data-vscode-context='{"webviewSection":"scene","preventDefaultContextMenuItems":true}' title="${escapeHtml(scene.uri.fsPath)}">
           <span class="scene-icon">${iconSvg('scene')}</span><span>${escapeHtml(scene.label)}</span><small>${escapeHtml(scene.relativePath)}</small>
         </button>`).join('');
       const games = project.games.map(game => `

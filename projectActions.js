@@ -1,4 +1,5 @@
 const path = require('node:path');
+const fs = require('node:fs/promises');
 
 function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) {
   const vscode = vscodeApi;
@@ -69,6 +70,112 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     terminal.sendText(`call "${command.command}"`, true);
   }
 
+  async function findGameSceneConfig(project, scene) {
+    let sceneContents;
+    try {
+      sceneContents = await fs.readFile(scene.uri.fsPath, 'utf8');
+    } catch {
+      return undefined;
+    }
+
+    const exportPath = sceneContents.match(/\bexportPath:t\s*=\s*"([^"]+)"/i)?.[1];
+    const expectedLevelPaths = new Set();
+    if (exportPath) {
+      expectedLevelPaths.add(exportPath);
+      expectedLevelPaths.add(exportPath.replace(/\.bin$/i, '.blk'));
+    }
+    const projectContentPath = `content/${path.basename(project.root)}/levels/${scene.label}`;
+    expectedLevelPaths.add(`${projectContentPath}.blk`);
+    expectedLevelPaths.add(`${projectContentPath}.bin`);
+    const normalizedExpectedPaths = new Set(
+      [...expectedLevelPaths].map(value => value.replace(/\\/g, '/').toLowerCase())
+    );
+    const progRoot = path.join(project.root, 'prog');
+    let configFiles;
+    try {
+      configFiles = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(progRoot, '**/gamedata/scenes/*.blk'),
+        '**/{.git,node_modules}/**'
+      );
+    } catch {
+      return undefined;
+    }
+
+    configFiles.sort((left, right) => left.fsPath.localeCompare(right.fsPath));
+    for (const configFile of configFiles) {
+      let contents;
+      try {
+        contents = await fs.readFile(configFile.fsPath, 'utf8');
+      } catch {
+        continue;
+      }
+      const levelPaths = [...contents.matchAll(/\b(?:level__blk|levelBin)\s*:\s*[a-z]+\s*=\s*"([^"]+)"/gi)]
+        .map(match => match[1].replace(/\\/g, '/').toLowerCase());
+      if (!levelPaths.some(levelPath => normalizedExpectedPaths.has(levelPath))) continue;
+
+      const relativePath = path.relative(progRoot, configFile.fsPath).replace(/\\/g, '/');
+      const gameDataIndex = relativePath.toLowerCase().lastIndexOf('gamedata/');
+      if (gameDataIndex < 0) continue;
+      return relativePath.slice(gameDataIndex);
+    }
+    return undefined;
+  }
+
+  async function runProjectSceneInGame(project, scenePath) {
+    const scene = project?.scenes.find(item => item.uri.fsPath === scenePath);
+    if (!scene) {
+      vscode.window.showErrorMessage('Select a valid scene for this project.');
+      return;
+    }
+
+    const gameSceneConfig = await findGameSceneConfig(project, scene);
+    if (!gameSceneConfig) {
+      vscode.window.showErrorMessage(`No game scene configuration found for ${scene.label}.`);
+      return;
+    }
+
+    const normalizePath = value => value.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase();
+    const matchingCommand = project.gameCommands.find(command => command.launchArgs?.some(argument => {
+      const match = argument.match(/^(?:-config:scene:t=|-scene:)(.+)$/i);
+      return match && normalizePath(match[1]) === normalizePath(gameSceneConfig);
+    }));
+
+    let executable;
+    let args;
+    if (matchingCommand) {
+      executable = project.games.find(game =>
+        path.basename(game.executable).toLowerCase() === matchingCommand.executableName?.toLowerCase()
+      )?.executable;
+      if (!executable) {
+        vscode.window.showErrorMessage(`Game executable from ${matchingCommand.label} was not found.`);
+        return;
+      }
+      args = matchingCommand.launchArgs;
+    } else {
+      if (project.games.length === 0) {
+        vscode.window.showErrorMessage(`No game executable found for ${project.label}.`);
+        return;
+      }
+      let game = project.games[0];
+      if (project.games.length > 1) {
+        const selection = await vscode.window.showQuickPick(
+          project.games.map(item => ({
+            label: item.label,
+            description: path.relative(project.root, item.executable),
+            executable: item.executable
+          })),
+          { placeHolder: `Select a game to run ${scene.label}` }
+        );
+        if (!selection) return;
+        game = selection;
+      }
+      executable = game.executable;
+      args = [`-scene:${gameSceneConfig}`, '-config:disableMenu:b=yes'];
+    }
+
+    toolRunner.launch(executable, args, path.join(project.root, 'game'), { detached: false, windowsHide: false });
+  }
+
   async function pickProjectItem(items, placeHolder) {
     if (items.length === 0) {
       vscode.window.showInformationMessage(`No entries available. ${placeHolder}.`);
@@ -113,6 +220,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     findProjectForFolder,
     runProjectGame,
     runProjectGameCommand,
+    runProjectSceneInGame,
     openProjectScene,
     pickProjectGame,
     pickProjectGameCommand,

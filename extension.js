@@ -46,6 +46,8 @@ function activate(context) {
     provider.copyContextTargetName()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.copyContextTargetFullname', () =>
     provider.copyContextTargetFullname()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.runSceneInGame', () =>
+    provider.runContextSceneInGame()));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
     webviewOptions: { retainContextWhenHidden: true }
   }));

@@ -57,6 +57,26 @@ function findGameCommandFiles(projectRoot) {
     .map(item => ({ command: item.file, label: item.label, ...findGameCommandInvocation(item.file) }));
 }
 
+function parseCommandLineArguments(commandLine) {
+  const args = [];
+  let argument = '';
+  let quoted = false;
+
+  for (let index = 0; index < commandLine.length; index += 1) {
+    const character = commandLine[index];
+    if (character === '"') {
+      quoted = !quoted;
+    } else if (/\s/.test(character) && !quoted) {
+      if (argument) args.push(argument);
+      argument = '';
+    } else {
+      argument += character;
+    }
+  }
+  if (argument) args.push(argument);
+  return args.filter(argument => argument !== '%*');
+}
+
 function findGameCommandInvocation(commandFile) {
   let contents;
   try {
@@ -69,9 +89,13 @@ function findGameCommandInvocation(commandFile) {
   for (const line of lines) {
     const match = line.match(/^\s*@?(?:start\s+(?:"[^"]*"\s+)?|call\s+)?(?:"([^\"]+\.exe)"|([^\s"]+\.exe))(?=\s|$)(.*)$/i);
     if (!match) continue;
-    const executable = path.basename(match[1] || match[2]);
+    const executable = (match[1] || match[2]).split(/[\\/]/).pop();
     const args = match[3].trim();
-    return { invocation: [executable, args].filter(Boolean).join(' ') };
+    return {
+      executableName: executable,
+      launchArgs: parseCommandLineArguments(args),
+      invocation: [executable, args].filter(Boolean).join(' ')
+    };
   }
 
   return { invocation: undefined };

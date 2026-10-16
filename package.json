@@ -57,6 +57,11 @@
         "title": "Refresh Dagor Projects"
       },
       {
+        "command": "dagorProjectManager.runSceneInGame",
+        "title": "Run In Game",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.revealContextTarget",
         "title": "Reveal in VS Code",
         "category": "Dagor Project Manager"
@@ -119,27 +124,36 @@
     "menus": {
       "webview/context": [
         {
+          "command": "dagorProjectManager.runSceneInGame",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'scene'",
+          "group": "navigation@0"
+        },
+        {
           "command": "dagorProjectManager.revealContextTarget",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
-          "group": "navigation@1"
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "group": "1_reveal@1"
         },
         {
           "command": "dagorProjectManager.revealContextTargetInOS",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
-          "group": "navigation@2"
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "group": "1_reveal@2"
         },
         {
           "command": "dagorProjectManager.copyContextTargetName",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
           "group": "9_copy@1"
         },
         {
           "command": "dagorProjectManager.copyContextTargetFullname",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
           "group": "9_copy@2"
         }
       ],
       "commandPalette": [
+        {
+          "command": "dagorProjectManager.runSceneInGame",
+          "when": "false"
+        },
         {
           "command": "dagorProjectManager.revealContextTarget",
           "when": "false"
