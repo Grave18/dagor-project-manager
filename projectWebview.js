@@ -181,6 +181,9 @@ class ProjectWebviewProvider {
     if (target.kind === 'project') {
       this.contextTargetPath = project.root;
       this.contextTargetName = path.basename(project.root);
+    } else if (target.kind === 'build') {
+      this.contextTargetPath = project.root;
+      this.contextTargetName = project.label;
     } else if (target.kind === 'scene') {
       const scene = project.scenes.find(item => item.uri.fsPath === target.path);
       this.contextTargetPath = scene?.uri.fsPath;
@@ -244,6 +247,22 @@ class ProjectWebviewProvider {
     await this.actions.runProjectSceneInGame(target.project, target.path);
   }
 
+  runContextBuild(components) {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'build' || !target.project) return;
+    const selectedComponents = Array.isArray(components)
+      ? components.filter(component => BUILD_COMPONENTS.some(item => item.value === component))
+      : [];
+    if (selectedComponents.length === 0) return;
+    this.actions.startBuild(target.project, selectedComponents, running => {
+      if (this.view) this.view.webview.postMessage({
+        type: 'buildState',
+        project: target.project.applicationFile,
+        running
+      });
+    });
+  }
+
   getHtml() {
     const nonce = crypto.randomBytes(16).toString('hex');
     const projectRows = this.catalog.projects.map(project => {
@@ -293,7 +312,7 @@ class ProjectWebviewProvider {
         <section class="project-actions${this.animateProjectPanel ? ' opening' : ''}"${this.animateProjectPanel ? ` style="height:${this.projectPanelFromHeight ?? 0}px"` : ''} data-project="${projectId}" data-project-data="${projectData}" data-running="${running}">
           <div class="action-grid">
             <div class="action-group">
-              <button type="button" class="action build-toggle" data-action="build" aria-expanded="${running}" aria-label="Build Project">${iconSvg('build')} <span>Build Project</span></button>
+              <button type="button" class="action build-toggle" data-action="build" data-context-kind="build" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"build","preventDefaultContextMenuItems":true}' aria-expanded="${running}" aria-label="Build Project">${iconSvg('build')} <span>Build Project</span></button>
               <div class="components ${running ? 'visible' : ''}"><div class="caption">Select components to build:</div>${buildItems}<button type="button" class="build-submit ${running ? 'running' : ''}" data-action="submitBuild" aria-label="${running ? 'Stop Build' : 'Build'}"><span class="build-icon">${iconSvg('play', 'build-start-icon')}${iconSvg('stop', 'build-stop-icon')}</span> <span class="build-label">${running ? 'Stop Build' : 'Build'}</span></button></div>
               <button type="button" class="action" data-action="viewer">${iconSvg('external')} <span>Open daViewer</span></button>
             </div>

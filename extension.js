@@ -48,6 +48,13 @@ function activate(context) {
     provider.copyContextTargetFullname()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.runSceneInGame', () =>
     provider.runContextSceneInGame()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildAllFromContext', () =>
+    provider.runContextBuild(BUILD_COMPONENTS.map(component => component.value))));
+  for (const component of BUILD_COMPONENTS) {
+    const componentName = component.value[0].toUpperCase() + component.value.slice(1);
+    context.subscriptions.push(vscode.commands.registerCommand(`dagorProjectManager.build${componentName}FromContext`, () =>
+      provider.runContextBuild([component.value])));
+  }
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
     webviewOptions: { retainContextWhenHidden: true }
   }));

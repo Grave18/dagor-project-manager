@@ -49,6 +49,36 @@
         "title": "Build Project Components"
       },
       {
+        "command": "dagorProjectManager.buildAllFromContext",
+        "title": "Build All",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.buildCodeFromContext",
+        "title": "Code",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.buildShadersFromContext",
+        "title": "Shaders",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.buildAssetsFromContext",
+        "title": "Assets",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.buildVromfsFromContext",
+        "title": "Vromfs",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.buildGuiFromContext",
+        "title": "Gui",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.generateProject",
         "title": "Generate Project (Not Implemented)"
       },
@@ -124,6 +154,36 @@
     "menus": {
       "webview/context": [
         {
+          "command": "dagorProjectManager.buildAllFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "navigation"
+        },
+        {
+          "command": "dagorProjectManager.buildCodeFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "1_buildComponents@1"
+        },
+        {
+          "command": "dagorProjectManager.buildShadersFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "1_buildComponents@2"
+        },
+        {
+          "command": "dagorProjectManager.buildAssetsFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "1_buildComponents@3"
+        },
+        {
+          "command": "dagorProjectManager.buildVromfsFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "1_buildComponents@4"
+        },
+        {
+          "command": "dagorProjectManager.buildGuiFromContext",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'build'",
+          "group": "1_buildComponents@5"
+        },
+        {
           "command": "dagorProjectManager.runSceneInGame",
           "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'scene'",
           "group": "navigation@0"
@@ -150,6 +210,30 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "dagorProjectManager.buildAllFromContext",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.buildCodeFromContext",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.buildShadersFromContext",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.buildAssetsFromContext",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.buildVromfsFromContext",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.buildGuiFromContext",
+          "when": "false"
+        },
         {
           "command": "dagorProjectManager.runSceneInGame",
           "when": "false"
