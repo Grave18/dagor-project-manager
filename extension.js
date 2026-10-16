@@ -189,15 +189,17 @@ function findBuildScript(projectRoot) {
   return candidates.find(candidate => fs.existsSync(candidate));
 }
 
-function findGameFiles(projectRoot, extension) {
+function findGameFiles(projectRoot, extension, includeImmediateSubdirectories = true) {
   const gameRoot = path.join(projectRoot, 'game');
   const directories = [gameRoot];
-  try {
-    for (const entry of fs.readdirSync(gameRoot, { withFileTypes: true })) {
-      if (entry.isDirectory()) directories.push(path.join(gameRoot, entry.name));
+  if (includeImmediateSubdirectories) {
+    try {
+      for (const entry of fs.readdirSync(gameRoot, { withFileTypes: true })) {
+        if (entry.isDirectory()) directories.push(path.join(gameRoot, entry.name));
+      }
+    } catch {
+      return [];
     }
-  } catch {
-    return [];
   }
 
   const files = [];
@@ -226,7 +228,7 @@ function findGameExecutables(projectRoot) {
 }
 
 function findGameCommandFiles(projectRoot) {
-  return findGameFiles(projectRoot, '.cmd')
+  return findGameFiles(projectRoot, '.cmd', false)
     .map(item => ({ command: item.file, label: item.label }));
 }
 
@@ -485,7 +487,7 @@ class ProjectWebviewProvider {
             </div>
             <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
             <div class="scene-group game-group"><button type="button" class="action scene-heading" data-action="toggleGames" aria-expanded="true"><span class="game-heading-icon">${iconSvg('play')}</span><span>Run Game</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-list">${games || '<div class="empty">No game executables found</div>'}</div></div>
-            <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">No game command files found</div>'}</div></div>
+            <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
           </div>
         </section>`;
       projectActions = projectActions.replace(
@@ -853,7 +855,7 @@ function activate(context) {
   context.subscriptions.push(watcher.onDidDelete(() => catalog.refresh()));
   context.subscriptions.push(watcher.onDidChange(() => catalog.refresh()));
   createGameExecutableWatcher();
-  const gameCommandWatcher = vscode.workspace.createFileSystemWatcher('**/game/**/*.cmd');
+  const gameCommandWatcher = vscode.workspace.createFileSystemWatcher('**/game/*.cmd');
   context.subscriptions.push(gameCommandWatcher);
   context.subscriptions.push(gameCommandWatcher.onDidCreate(() => catalog.refresh()));
   context.subscriptions.push(gameCommandWatcher.onDidDelete(() => catalog.refresh()));
