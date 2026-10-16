@@ -22,7 +22,7 @@ Resolve the engine root from workspace folders and their ancestors by checking f
 
 ## User Flow
 
-1. Add an **Add Project** button beside **Refresh** in the Projects view.
+1. Keep **Refresh** at the top right of the Projects view and place a left-aligned **Add Project** button directly below the project list, matching the supplied screenshot.
 2. Ask for the project name.
 3. Resolve the engine root and create the destination directory only if it does not exist.
 4. Copy the bundled starter template, replacing markers in paths and text files.
