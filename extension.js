@@ -328,6 +328,8 @@ class ProjectWebviewProvider {
     this.view = undefined;
     this.selectedProject = undefined;
     this.projectChevronAnimations = new Map();
+    this.animateProjectPanel = false;
+    this.projectPanelFromHeight = undefined;
     this.disposable = catalog.onDidChange.event(projects => {
       if (this.selectedProject && !projects.some(project => project.applicationFile === this.selectedProject)) {
         this.selectedProject = undefined;
@@ -383,17 +385,25 @@ class ProjectWebviewProvider {
         if (previousProject) this.projectChevronAnimations.set(previousProject, 'collapse');
         this.projectChevronAnimations.set(this.selectedProject, 'expand');
       }
+      this.animateProjectPanel = previousProject !== this.selectedProject;
+      this.projectPanelFromHeight = Number.isFinite(message.fromHeight) ? Math.max(0, message.fromHeight) : 0;
       this.render();
+      this.animateProjectPanel = false;
+      this.projectPanelFromHeight = undefined;
     } else if (message.type === 'toggleProject') {
       if (!project) return;
       const previousProject = this.selectedProject;
-      this.selectedProject = project.applicationFile;
+      this.selectedProject = previousProject === project.applicationFile ? undefined : project.applicationFile;
       this.projectChevronAnimations.clear();
       if (previousProject !== this.selectedProject) {
         if (previousProject) this.projectChevronAnimations.set(previousProject, 'collapse');
-        this.projectChevronAnimations.set(this.selectedProject, 'expand');
+        if (this.selectedProject) this.projectChevronAnimations.set(this.selectedProject, 'expand');
       }
+      this.animateProjectPanel = previousProject !== this.selectedProject;
+      this.projectPanelFromHeight = Number.isFinite(message.fromHeight) ? Math.max(0, message.fromHeight) : 0;
       this.render();
+      this.animateProjectPanel = false;
+      this.projectPanelFromHeight = undefined;
     } else if (message.type === 'action') {
       if (message.action === 'build') {
         const components = Array.isArray(message.components)
@@ -478,7 +488,7 @@ class ProjectWebviewProvider {
       const buildItems = BUILD_COMPONENTS.map(item => `
         <label class="component"><input type="checkbox" value="${item.value}" checked><span>${item.label}</span></label>`).join('');
       projectActions = `
-        <section class="project-actions" data-project="${projectId}" data-project-data="${projectData}" data-running="${running}">
+        <section class="project-actions${this.animateProjectPanel ? ' opening' : ''}"${this.animateProjectPanel ? ` style="height:${this.projectPanelFromHeight ?? 0}px"` : ''} data-project="${projectId}" data-project-data="${projectData}" data-running="${running}">
           <div class="action-grid">
             <div class="action-group">
               <button type="button" class="action build-toggle" data-action="build" aria-expanded="${running}" aria-label="Build Project">${iconSvg('build')} <span>Build Project</span></button>
@@ -512,6 +522,38 @@ class ProjectWebviewProvider {
       </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div>${projectActions}</main>
       <script nonce="${nonce}">
         const vscode=acquireVsCodeApi();
+        const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let projectPanelAnimation;
+        const enteringPanel=document.querySelector('.project-actions.opening');
+        if(enteringPanel&&prefersReducedMotion){
+          enteringPanel.style.height='auto';
+          enteringPanel.classList.remove('opening');
+        }else if(enteringPanel&&enteringPanel.animate){
+          const fromHeight=enteringPanel.getBoundingClientRect().height;
+          const styles=getComputedStyle(enteringPanel);
+          const height=enteringPanel.scrollHeight+parseFloat(styles.borderTopWidth)+parseFloat(styles.borderBottomWidth);
+          const animation=enteringPanel.animate([{height:fromHeight+'px',opacity:0.96,transform:'translateY(0)'},{height:height+'px',opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.22,1,.36,1)'});
+          const content=enteringPanel.querySelector('.action-grid');
+          if(content&&content.animate){
+            const shift=height>=fromHeight?8:-8;
+            content.animate([{opacity:0.7,transform:'translateY('+shift+'px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.22,1,.36,1)'});
+          }
+          animation.onfinish=()=>{enteringPanel.style.height='auto';enteringPanel.classList.remove('opening');};
+        }
+        const selectProject=projectId=>{
+          if(projectPanelAnimation){projectPanelAnimation.cancel();projectPanelAnimation=undefined;}
+          const panel=document.querySelector('.project-actions');
+          if(panel&&panel.dataset.project===projectId&&!prefersReducedMotion&&panel.animate){
+            const height=panel.getBoundingClientRect().height;
+            projectPanelAnimation=panel.animate([{height:height+'px',opacity:1,transform:'translateY(0)'},{height:'0px',opacity:0,transform:'translateY(-6px)'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)'});
+            projectPanelAnimation.onfinish=()=>{projectPanelAnimation=undefined;vscode.postMessage({type:'toggleProject',project:projectId});};
+          }else if(panel&&panel.dataset.project===projectId){
+            vscode.postMessage({type:'toggleProject',project:projectId});
+          }else{
+            const fromHeight=panel?panel.getBoundingClientRect().height:0;
+            vscode.postMessage({type:'selectProject',project:projectId,fromHeight});
+          }
+        };
         const projectFor=element=>JSON.parse(element.closest('.project-actions').dataset.projectData);
         document.getElementById('refresh').addEventListener('click',()=>{
   if(document.getElementById('refresh').disabled)return;
@@ -523,7 +565,7 @@ const blockButtonsFor2s=()=>{
   setTimeout(()=>buttons.forEach(btn=>btn.disabled=false),5000);
 };
         document.addEventListener('click',event=>{
-          const select=event.target.closest('[data-select]');if(select){vscode.postMessage({type:'selectProject',project:select.dataset.select});return;}
+          const select=event.target.closest('[data-select]');if(select){selectProject(select.dataset.select);return;}
           const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
           const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
           const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
