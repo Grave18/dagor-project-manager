@@ -530,13 +530,17 @@ class ProjectWebviewProvider {
           enteringPanel.classList.remove('opening');
         }else if(enteringPanel&&enteringPanel.animate){
           const fromHeight=enteringPanel.getBoundingClientRect().height;
-          const styles=getComputedStyle(enteringPanel);
-          const height=enteringPanel.scrollHeight+parseFloat(styles.borderTopWidth)+parseFloat(styles.borderBottomWidth);
-          const animation=enteringPanel.animate([{height:fromHeight+'px',opacity:0.96,transform:'translateY(0)'},{height:height+'px',opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.22,1,.36,1)'});
+          const initialHeight=enteringPanel.style.height;
+          enteringPanel.style.height='auto';
+          const height=enteringPanel.getBoundingClientRect().height;
+          enteringPanel.style.height=initialHeight;
+          const expanding=height>=fromHeight;
+          const easing=expanding?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,1,1)';
+          const animation=enteringPanel.animate([{height:fromHeight+'px',opacity:0.96,transform:'translateY(0)'},{height:height+'px',opacity:1,transform:'translateY(0)'}],{duration:260,easing});
           const content=enteringPanel.querySelector('.action-grid');
           if(content&&content.animate){
-            const shift=height>=fromHeight?8:-8;
-            content.animate([{opacity:0.7,transform:'translateY('+shift+'px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.22,1,.36,1)'});
+            const shift=expanding?-8:8;
+            content.animate([{opacity:0.7,transform:'translateY('+shift+'px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing});
           }
           animation.onfinish=()=>{enteringPanel.style.height='auto';enteringPanel.classList.remove('opening');};
         }
@@ -572,9 +576,26 @@ const blockButtonsFor2s=()=>{
           const button=event.target.closest('[data-action]');if(!button)return;
           if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
             const content=button.nextElementSibling;
-            content.hidden=!content.hidden;
-            button.setAttribute('aria-expanded',String(!content.hidden));
-            button.querySelector('.end-chevron').classList.toggle('expanded',!content.hidden);
+            const expanding=content.hidden;
+            const group=button.closest('.scene-group');
+            const animate=group&&group.animate&&!prefersReducedMotion;
+            if(animate){
+              const fromHeight=group.getBoundingClientRect().height;
+              content.hidden=!expanding;
+              const height=group.getBoundingClientRect().height;
+              content.hidden=!content.hidden;
+              const animation=group.animate([{height:fromHeight+'px'},{height:height+'px'}],{duration:220,easing:expanding?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,1,1)'});
+              group.style.overflow='hidden';
+              animation.onfinish=()=>{
+                content.hidden=!expanding;
+                group.style.height='';
+                group.style.overflow='';
+              };
+            }else{
+              content.hidden=!expanding;
+            }
+            button.setAttribute('aria-expanded',String(expanding));
+            button.querySelector('.end-chevron').classList.toggle('expanded',expanding);
             return;
           }
           if(button.dataset.action==='build'){
