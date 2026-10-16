@@ -118,7 +118,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       if (gameDataIndex < 0) continue;
       return relativePath.slice(gameDataIndex);
     }
-    return undefined;
+    return exportPath?.replace(/\\/g, '/');
   }
 
   async function runProjectSceneInGame(project, scenePath) {
