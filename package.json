@@ -67,6 +67,16 @@
         "category": "Dagor Project Manager"
       },
       {
+        "command": "dagorProjectManager.copyContextTargetName",
+        "title": "Copy Name",
+        "category": "Dagor Project Manager"
+      },
+      {
+        "command": "dagorProjectManager.copyContextTargetFullname",
+        "title": "Copy Fullname",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.folderBuildAll",
         "title": "Build All"
       },
@@ -117,11 +127,33 @@
           "command": "dagorProjectManager.revealContextTargetInOS",
           "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
           "group": "navigation@2"
+        },
+        {
+          "command": "dagorProjectManager.copyContextTargetName",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "group": "9_copy@1"
+        },
+        {
+          "command": "dagorProjectManager.copyContextTargetFullname",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource')",
+          "group": "9_copy@2"
         }
       ],
       "commandPalette": [
         {
           "command": "dagorProjectManager.revealContextTarget",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.revealContextTargetInOS",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.copyContextTargetName",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.copyContextTargetFullname",
           "when": "false"
         }
       ],

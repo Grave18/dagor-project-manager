@@ -42,6 +42,10 @@ function activate(context) {
     provider.revealContextTarget()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTargetInOS', () =>
     provider.revealContextTargetInOS()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.copyContextTargetName', () =>
+    provider.copyContextTargetName()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.copyContextTargetFullname', () =>
+    provider.copyContextTargetFullname()));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('dagorProjectManager.projects', provider, {
     webviewOptions: { retainContextWhenHidden: true }
   }));

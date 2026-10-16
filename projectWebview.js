@@ -49,6 +49,7 @@ class ProjectWebviewProvider {
     this.view = undefined;
     this.selectedProject = undefined;
     this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
     this.projectChevronAnimations = new Map();
     this.animateProjectPanel = false;
     this.projectPanelFromHeight = undefined;
@@ -169,23 +170,32 @@ class ProjectWebviewProvider {
 
   setContextTarget(target) {
     this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
     const project = this.catalog.projects.find(item => item.applicationFile === target?.project);
     if (!project) return;
 
     if (target.kind === 'project') {
       this.contextTargetPath = project.root;
+      this.contextTargetName = path.basename(project.root);
     } else if (target.kind === 'scene') {
-      this.contextTargetPath = project.scenes.find(item => item.uri.fsPath === target.path)?.uri.fsPath;
+      const scene = project.scenes.find(item => item.uri.fsPath === target.path);
+      this.contextTargetPath = scene?.uri.fsPath;
+      this.contextTargetName = scene?.label;
     } else if (target.kind === 'game') {
-      this.contextTargetPath = project.games.find(item => item.executable === target.path)?.executable;
+      const game = project.games.find(item => item.executable === target.path);
+      this.contextTargetPath = game?.executable;
+      this.contextTargetName = game?.label;
     } else if (target.kind === 'command') {
-      this.contextTargetPath = project.gameCommands.find(item => item.command === target.path)?.command;
+      const command = project.gameCommands.find(item => item.command === target.path);
+      this.contextTargetPath = command?.command;
+      this.contextTargetName = command?.label;
     }
   }
 
   async revealContextTarget() {
     const targetPath = this.contextTargetPath;
     this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
     if (!targetPath) return;
     await vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(targetPath));
   }
@@ -193,8 +203,25 @@ class ProjectWebviewProvider {
   async revealContextTargetInOS() {
     const targetPath = this.contextTargetPath;
     this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
     if (!targetPath) return;
     await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(targetPath));
+  }
+
+  async copyContextTargetName() {
+    const targetName = this.contextTargetName;
+    this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
+    if (!targetName) return;
+    await vscode.env.clipboard.writeText(targetName);
+  }
+
+  async copyContextTargetFullname() {
+    const targetPath = this.contextTargetPath;
+    this.contextTargetPath = undefined;
+    this.contextTargetName = undefined;
+    if (!targetPath) return;
+    await vscode.env.clipboard.writeText(targetPath);
   }
 
   getHtml() {
