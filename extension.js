@@ -59,6 +59,8 @@ function activate(context) {
     provider.deleteContextScene()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.runSceneInGame', () =>
     provider.runContextSceneInGame()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.folderCreateScene', () =>
+    provider.createSceneFromContext()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildAllFromContext', () =>
     provider.runContextBuild(BUILD_COMPONENTS.map(component => component.value))));
   for (const component of BUILD_COMPONENTS) {

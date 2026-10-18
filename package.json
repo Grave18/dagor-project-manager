@@ -149,6 +149,10 @@
       {
         "command": "dagorProjectManager.folderCreateCommand",
         "title": "Create Command"
+      },
+      {
+        "command": "dagorProjectManager.folderCreateScene",
+        "title": "Create Scene"
       }
     ],
     "viewsContainers": {
@@ -211,6 +215,11 @@
           "command": "dagorProjectManager.folderCreateCommand",
           "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'command'",
           "group": "3_command"
+        },
+        {
+          "command": "dagorProjectManager.folderCreateScene",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'sceneGroup'",
+          "group": "navigation@1"
         },
         {
           "command": "dagorProjectManager.revealContextTarget",

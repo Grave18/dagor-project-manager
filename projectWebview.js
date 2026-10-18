@@ -210,6 +210,9 @@ class ProjectWebviewProvider {
     } else if (target.kind === 'commandGroup') {
       this.contextTargetPath = path.join(project.root, 'game');
       this.contextTargetName = project.label;
+    } else if (target.kind === 'sceneGroup') {
+      this.contextTargetPath = project.root;
+      this.contextTargetName = project.label;
     }
     if (this.contextTargetPath) {
       this.contextTargetProject = project;
@@ -479,6 +482,14 @@ class ProjectWebviewProvider {
     await this.actions.createProjectGameCommand(project);
   }
 
+  async createSceneFromContext() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'sceneGroup' || !target.project) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    if (!project) return;
+    await this.actions.createProjectScene(project);
+  }
+
   async runContextSceneInGame() {
     const target = this.takeContextTarget();
     if (target.kind !== 'scene' || !target.project || !target.path) return;
@@ -554,7 +565,7 @@ class ProjectWebviewProvider {
               <div class="components ${running ? 'visible' : ''}"><div class="caption">Select components to build:</div>${buildItems}<button type="button" class="build-submit ${running ? 'running' : ''}" data-action="submitBuild" aria-label="${running ? 'Stop Build' : 'Build'}"><span class="build-icon">${iconSvg('play', 'build-start-icon')}${iconSvg('stop', 'build-stop-icon')}</span> <span class="build-label">${running ? 'Stop Build' : 'Build'}</span></button></div>
               <button type="button" class="action" data-action="viewer" data-vscode-context='{"preventDefaultContextMenuItems":true}'>${iconSvg('external')} <span>Open daViewer</span></button>
             </div>
-            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}<button type="button" class="scene create-scene" data-create-scene data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Scene</span></button></div></div>
+            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" data-context-kind="sceneGroup" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"sceneGroup","preventDefaultContextMenuItems":true}' aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}<button type="button" class="scene create-scene" data-create-scene data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Scene</span></button></div></div>
             <div class="scene-group game-group"><button type="button" class="action scene-heading" data-action="toggleGames" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="game-heading-icon">${iconSvg('play')}</span><span>Run Game</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-list">${games || '<div class="empty">Game executables should be located in game/ or one folder below</div>'}</div></div>
             <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" data-context-kind="commandGroup" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"command","preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">Command files should be located in game/</div>'}<button type="button" class="scene create-command" data-create-command data-context-project="${projectId}" data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Command</span></button></div></div>
           </div>

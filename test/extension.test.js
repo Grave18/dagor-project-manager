@@ -327,6 +327,7 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.deleteContextCommand',
     'dagorProjectManager.deleteContextScene',
     'dagorProjectManager.runSceneInGame',
+    'dagorProjectManager.folderCreateScene',
     'dagorProjectManager.buildAllFromContext',
     'dagorProjectManager.buildCodeFromContext',
     'dagorProjectManager.buildShadersFromContext',
@@ -378,6 +379,10 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     item.command === 'dagorProjectManager.folderCreateCommand'
   );
   assert.equal(createCommandMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'command'");
+  const createSceneMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
+    item.command === 'dagorProjectManager.folderCreateScene'
+  );
+  assert.equal(createSceneMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'sceneGroup'");
 });
 
 test('confirms project deletion and moves its folder to the system trash', async () => {
@@ -620,6 +625,23 @@ test('shows Create Command after the Run Command entries and creates the file fo
   assert.equal(fs.readFileSync(createdCommand, 'utf8'), '');
   assert.equal(openedDocuments.at(-1).uri.fsPath, createdCommand);
   fs.rmSync(path.join(outerSpaceRoot, 'game'), { recursive: true, force: true });
+});
+
+test('creates a scene from the Open Scene heading context menu for that project', async () => {
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  inputBoxValue = 'context-scene';
+  quickPickSelection = 'Empty Scene';
+  provider.setContextTarget({ kind: 'sceneGroup', project: outerSpaceApplication });
+
+  await commands.get('dagorProjectManager.folderCreateScene')({ webviewSection: 'sceneGroup' });
+
+  const createdLevel = path.join(outerSpaceRoot, 'develop', 'levels', 'context-scene', 'context-scene.level.blk');
+  assert.ok(fs.existsSync(createdLevel));
+  assert.equal(openedDocuments.at(-1).uri.fsPath, createdLevel);
+  await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });
+  assert.match(webviewView.webview.html, /data-action="toggleScenes"[^>]*data-context-kind="sceneGroup"[^>]*data-vscode-context='\{"webviewSection":"sceneGroup"/);
+  fs.rmSync(path.dirname(createdLevel), { recursive: true, force: true });
 });
 
 test('Build All runs every available build component for the selected project folder', async () => {
