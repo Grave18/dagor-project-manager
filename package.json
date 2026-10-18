@@ -117,6 +117,11 @@
         "category": "Dagor Project Manager"
       },
       {
+        "command": "dagorProjectManager.deleteContextCommand",
+        "title": "Delete Command",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.folderBuildAll",
         "title": "Build All"
       },
@@ -204,27 +209,32 @@
         },
         {
           "command": "dagorProjectManager.revealContextTarget",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene' || webviewSection == 'commandItem')",
           "group": "1_reveal@1"
         },
         {
           "command": "dagorProjectManager.revealContextTargetInOS",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene' || webviewSection == 'commandItem')",
           "group": "1_reveal@2"
         },
         {
           "command": "dagorProjectManager.copyContextTargetName",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene' || webviewSection == 'commandItem')",
           "group": "9_copy@1"
         },
         {
           "command": "dagorProjectManager.copyContextTargetFullname",
-          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
+          "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene' || webviewSection == 'commandItem')",
           "group": "9_copy@2"
         },
         {
           "command": "dagorProjectManager.deleteContextProject",
           "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'project'",
+          "group": "z_delete"
+        },
+        {
+          "command": "dagorProjectManager.deleteContextCommand",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'commandItem'",
           "group": "z_delete"
         }
       ],
@@ -275,6 +285,10 @@
         },
         {
           "command": "dagorProjectManager.deleteContextProject",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.deleteContextCommand",
           "when": "false"
         }
       ],

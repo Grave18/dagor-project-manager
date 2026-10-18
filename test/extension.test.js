@@ -88,6 +88,9 @@ const vscode = {
           deleteTrashError = undefined;
           throw error;
         }
+        if (path.extname(uri.fsPath).toLowerCase() === '.cmd') {
+          fs.rmSync(uri.fsPath, { force: true });
+        }
         applicationFiles = applicationFiles.filter(file => !file.startsWith(`${uri.fsPath}${path.sep}`));
         sceneFiles = sceneFiles.filter(file => !file.startsWith(`${uri.fsPath}${path.sep}`));
       }
@@ -321,6 +324,7 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.copyContextTargetName',
     'dagorProjectManager.copyContextTargetFullname',
     'dagorProjectManager.deleteContextProject',
+    'dagorProjectManager.deleteContextCommand',
     'dagorProjectManager.runSceneInGame',
     'dagorProjectManager.buildAllFromContext',
     'dagorProjectManager.buildCodeFromContext',
@@ -364,6 +368,11 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
   );
   assert.equal(deleteMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'project'");
   assert.match(deleteMenuItem.group, /^z_/);
+  const deleteCommandMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
+    item.command === 'dagorProjectManager.deleteContextCommand'
+  );
+  assert.equal(deleteCommandMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'commandItem'");
+  assert.match(deleteCommandMenuItem.group, /^z_/);
   const createCommandMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
     item.command === 'dagorProjectManager.folderCreateCommand'
   );
@@ -444,6 +453,58 @@ test('leaves the project intact when permanent deletion fallback is cancelled', 
   assert.equal(warningPrompts.length, 2);
   assert.equal(deleteRequests.length, 1);
   assert.ok(provider.catalog.projects.some(project => project.root === workspaceRoot));
+});
+
+test('confirms deleting the selected command and moves it to the system trash', async () => {
+  const commandPath = path.join(gameDirectory, 'delete-me.cmd');
+  fs.writeFileSync(commandPath, '@echo off');
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'command', project: applicationFile, path: commandPath });
+  modalChoice = 'Delete Command';
+
+  try {
+    await commands.get('dagorProjectManager.deleteContextCommand')();
+
+    assert.equal(warningPrompts.length, 1);
+    assert.equal(warningPrompts[0].options.modal, true);
+    assert.match(warningPrompts[0].message, /delete command "delete-me"/i);
+    assert.deepEqual(warningPrompts[0].items, ['Delete Command', 'Cancel']);
+    assert.equal(deleteRequests.length, 1);
+    assert.equal(deleteRequests[0].uri.fsPath, commandPath);
+    assert.deepEqual(deleteRequests[0].options, { recursive: true, useTrash: true });
+    assert.ok(!fs.existsSync(commandPath));
+    assert.ok(!provider.catalog.projects.find(project => project.applicationFile === applicationFile)
+      ?.gameCommands.some(command => command.command === commandPath));
+  } finally {
+    fs.rmSync(commandPath, { force: true });
+  }
+});
+
+test('offers permanent command deletion only after moving it to trash fails', async () => {
+  const commandPath = path.join(gameDirectory, 'delete-fallback.cmd');
+  fs.writeFileSync(commandPath, '@echo off');
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'command', project: applicationFile, path: commandPath });
+  warningResponses.push('Delete Command', 'Permanently Delete');
+  deleteTrashError = new Error('Recycle bin unavailable');
+
+  try {
+    await commands.get('dagorProjectManager.deleteContextCommand')();
+
+    assert.equal(warningPrompts.length, 2);
+    assert.match(warningPrompts[1].message, /could not be moved to the system trash/i);
+    assert.match(warningPrompts[1].options.detail, /cannot be undone/i);
+    assert.deepEqual(warningPrompts[1].items, ['Permanently Delete', 'Cancel']);
+    assert.deepEqual(deleteRequests.map(request => request.options), [
+      { recursive: true, useTrash: true },
+      { recursive: true }
+    ]);
+    assert.ok(!fs.existsSync(commandPath));
+  } finally {
+    fs.rmSync(commandPath, { force: true });
+  }
 });
 
 test('places Create Project below the project list, routes it, and refreshes after creation', async () => {

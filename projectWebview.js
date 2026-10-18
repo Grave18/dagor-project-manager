@@ -292,6 +292,48 @@ class ProjectWebviewProvider {
     }
   }
 
+  async deleteContextCommand() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'command' || !target.project || !target.path) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    const command = project?.gameCommands.find(item => item.command === target.path);
+    if (!command) return;
+
+    const confirmation = await vscode.window.showWarningMessage(
+      `Delete command "${command.label}"?`,
+      {
+        modal: true,
+        detail: `The command file will be moved to the system trash:\n${command.command}`
+      },
+      'Delete Command',
+      'Cancel'
+    );
+    if (confirmation !== 'Delete Command') return;
+
+    try {
+      await vscode.workspace.fs.delete(vscode.Uri.file(command.command), { recursive: true, useTrash: true });
+      await this.catalog.refresh();
+    } catch (error) {
+      const confirmation = await vscode.window.showWarningMessage(
+        `Command "${command.label}" could not be moved to the system trash.`,
+        {
+          modal: true,
+          detail: `${error.message}\nPermanently deleting this command cannot be undone.\n${command.command}`
+        },
+        'Permanently Delete',
+        'Cancel'
+      );
+      if (confirmation !== 'Permanently Delete') return;
+
+      try {
+        await vscode.workspace.fs.delete(vscode.Uri.file(command.command), { recursive: true });
+        await this.catalog.refresh();
+      } catch (deleteError) {
+        vscode.window.showErrorMessage(`Failed to permanently delete command ${command.label}: ${deleteError.message}`);
+      }
+    }
+  }
+
   async createCommandFromContext() {
     const target = this.takeContextTarget();
     if (target.kind !== 'commandGroup' || !target.project) return;
@@ -362,7 +404,7 @@ class ProjectWebviewProvider {
           <span class="game-icon">${iconSvg('play')}</span><span>${escapeHtml(game.label)}</span><small>${escapeHtml(path.relative(project.root, game.executable))}</small>
         </button>`).join('');
       const gameCommands = project.gameCommands.map(command => `
-        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" data-context-kind="command" data-context-project="${projectId}" data-context-path="${escapeHtml(command.command)}" data-vscode-context='{"webviewSection":"resource","preventDefaultContextMenuItems":true}' title="${escapeHtml(command.invocation || command.command)}">
+        <button type="button" class="scene game-command" data-game-command="${escapeHtml(command.command)}" data-context-kind="command" data-context-project="${projectId}" data-context-path="${escapeHtml(command.command)}" data-vscode-context='{"webviewSection":"commandItem","preventDefaultContextMenuItems":true}' title="${escapeHtml(command.invocation || command.command)}">
           <span class="command-icon">${iconSvg('terminal')}</span><span>${escapeHtml(command.label)}</span><small>${escapeHtml(path.relative(project.root, command.command))}</small>
         </button>`).join('');
       const buildItems = BUILD_COMPONENTS.map(item => `
