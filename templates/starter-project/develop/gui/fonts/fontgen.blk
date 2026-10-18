@@ -1,0 +1,28 @@
+atlas:t="fonts"
+
+font {
+  name:t=system
+  file:t=lato-regular.ttf
+  forceAutoHinting:b=no
+  size_percents:r=1.481
+}
+
+font {
+  name:t=fontawesome
+  file:t=fontawesome-webfont.ttf
+  size_percents:r=1.944
+  forceAutoHinting:b=no
+
+  include_ex {
+    include _fontawesome.blk
+    includeCp:b=no
+    size_percents:r=1.944
+    forceAutoHinting:b=no
+  }
+}
+
+font {
+  name:t=mono
+  file:t=jetbrains-mono-nl-regular.ttf
+  size_percents:r=1.25
+}

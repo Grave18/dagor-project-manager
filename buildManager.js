@@ -8,6 +8,7 @@ const BUILD_COMPONENTS = [
   { label: 'Vromfs', description: 'Pack virtual file systems', value: 'vromfs' },
   { label: 'Gui', description: 'Build GUI data', value: 'gui' }
 ];
+const INTERNAL_BUILD_COMPONENTS = new Set(['editor_shaders']);
 
 class BuildManager {
   constructor({ vscodeApi, spawnProcess, refreshCatalog, subscriptions }) {
@@ -46,7 +47,8 @@ class BuildManager {
       return;
     }
     const selected = Array.isArray(components)
-      ? components.filter(component => BUILD_COMPONENTS.some(item => item.value === component))
+      ? components.filter(component =>
+        BUILD_COMPONENTS.some(item => item.value === component) || INTERNAL_BUILD_COMPONENTS.has(component))
       : [];
     const key = path.resolve(project.root);
     if (this.runningBuilds.has(key)) {

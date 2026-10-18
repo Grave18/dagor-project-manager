@@ -1,0 +1,49 @@
+pack:b=false
+allowMkDir:b=yes
+platform:t="PC"
+outputRoot_PC:t ="../../game/"
+outputRoot_iOS:t="../../game.iOS/"
+
+rootFolder_PC:t = "."
+
+output:t  ="ui/fonts.vromfs.bin"
+
+sign_private_key:t=""
+sign_digest:t="sha256"
+folder {
+  path:t="pc.out.ui/."
+  dest_path:t="./"
+  scan_folder:b=true
+  scan_subfolders:b=false
+
+  wildcard:t=fonts*.bin
+  wildcard:t=pxFonts*.bin
+  wildcard:t=*.dynFont.blk
+}
+
+folder {
+  path:t="pc.out.ui/."
+  dest_path:t="./"
+  scan_folder:b=true
+  scan_subfolders:b=false
+
+  wildcard:t=*.ttf
+  wildcard:t=*.otf
+  wildcard:t=*.ttc
+}
+
+folder {
+  path:t="fonts/."
+  dest_path:t="./"
+  scan_folder:b=true
+  scan_subfolders:b=false
+  wildcard:t=fonts.blk
+}
+
+folder {
+  path:t="fonts/imgui/."
+  dest_path:t="imgui/"
+  scan_folder:b=true
+  scan_subfolders:b=false
+  wildcard:t=roboto-regular.ttf
+}

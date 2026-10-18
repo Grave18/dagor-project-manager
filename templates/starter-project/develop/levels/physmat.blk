@@ -1,0 +1,24 @@
+PhysMats
+{
+  __DefaultParams
+  {
+    iak:r = 1.0
+    damage_k:r = 1.0
+  }
+
+  default
+  {
+    bf_class:t = "default"
+    color:c = 255,162,0,100
+    isWater:b = 0
+    shakeMultiplier:r = 1
+    frictionMultiplier:r = 1
+    damage_k:r = 0.3
+    resistanceK:r = 0.00035
+    dustFactor:r = 0.14
+    mudFactor:r = 0.1
+  }
+}
+InteractPropsList
+{
+}

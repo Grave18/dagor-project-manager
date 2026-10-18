@@ -1,9 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const vscode = require('vscode');
+const { findDagorEngineRoots } = require('./projectGenerator');
 
 function getWorkspaceRoots() {
-  return (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
+  const workspaceRoots = (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
+  const configuration = vscode.workspace.getConfiguration('dagorProjectManager');
+  const configuredToolsDirectory = configuration.get('toolsDirectory') || process.env.DAGOR_CDK_DIR;
+  return [...new Set([...workspaceRoots, ...findDagorEngineRoots(workspaceRoots, configuredToolsDirectory)])];
 }
 
 function findBuildScript(projectRoot) {

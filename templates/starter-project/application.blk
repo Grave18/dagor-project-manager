@@ -1,0 +1,685 @@
+collision:t = "Unigine"
+shaders:t="tools/tools"
+
+dynamicDeferred {
+  supportsRopt {
+    "render shadows":b=yes
+    "render VSM shadows":b=no
+    //"render water reflections":b=yes
+    "use SSAO":b=yes
+    "use SSR":b=yes
+    "no sun":b=yes
+    "no amb":b=yes
+    "no envi refl":b=yes
+    "no transp":b=yes
+    "no postfx":b=yes
+  }
+  defaultRopt {
+    "render VSM shadows":b=no
+    "no sun":b=no
+    "no amb":b=no
+    "no envi refl":b=no
+    "no transp":b=no
+    "no postfx":b=no
+    //"render water reflections":b=yes
+  }
+  dbgShow {
+    "diffuse":i=0
+    "specular":i=1
+    "normal":i=2
+    "smoothness":i=3
+    "base_color":i=4
+    "metallness":i=5
+    "material":i=6
+    "ssao":i=7
+    "ao":i=8
+    "albedo_ao":i=9
+    "final_ao":i=10
+    "preshadow":i=11
+    "translucency":i=12
+    "translucency_color":i=13
+    "ssr":i=14
+    "ssr_strength":i=15
+  }
+
+  //lightProbeFmt:t="A8B8G8R8"
+  //lightProbeFmt:t="A16B16G16R16F"
+  //lightProbeSz:i=512
+  sceneFmt:t="R11G11B10F"
+  postfxFmt:t="sRGB8"
+  postfx_sRGB_backbuf_write:b=yes
+
+  gbufCount:i=3
+  gbufFmt0:t="sRGB8"
+  gbufFmt1:t="A2B10G10R10"
+  gbufFmt2:t="R8G8"
+
+  shadowPreset {
+    name:t="2048 map, 100 m, no VSM"
+    csmSize:i=2048
+    csmMaxDist:r=100
+    vsmSize:i=16
+  }
+  shadowPreset {
+    name:t="2048 map, 1500 m, good VSM"
+    csmSize:i=2048
+    csmMaxDist:r=1500
+    vsmSize:i=2048
+    vsmMaxDist:r=8192
+  }
+  shadowPreset {
+    name:t="1024 map, 1500 m, def VSM"
+    csmSize:i=1024
+    csmMaxDist:r=1500
+  }
+  /*shadowPreset {
+    name:t="default name"
+    csmSize:i=512
+    csmW:i=2
+    csmH:i=2
+    csmMinSparseDist:r=100000
+    csmMinSparseFrame:r=-1000;
+    csmLambda:r=0.8
+    csmMaxDist:r=100
+
+    vsmSize:i=1024
+    vsmMaxDist:r=1000
+  }*/
+
+  hdrMode:t="real"
+  postfx:t="postfx"
+  vsmAllowed:b=no
+  grassTranslucency:b=no
+}
+AV_defaultShadowQ:i=0
+DE_defaultShadowQ:i=1
+
+/*clipmap
+{
+  sideSize:i = 2048
+  stackCount:i = 8
+  texelSize:r = 0.02
+  step:r = 1.7
+  finalSize:r = 40000
+}*/
+
+hdr_mode{
+  ps3:b=yes
+  //fake:b=yes
+  real:b=yes
+}
+
+SDK{
+  sdk_folder:t="/develop"
+  levels_folder:t="/develop/levels"
+//  script_scheme_folder:t="/develop/scripts"
+  daeditor3x_additional_plugins:t="tools/de3x_plugins"
+  exclude_dll:t="(csg|tgEnvi|tgNav|heightmapLand)-d.*(\.dll|\.so)"
+  allow_debug_bitmap_dump:b=no
+
+  levelExpSHA1Tags{
+    tag:t="RqRL"
+    tag:t="lmap"
+    tag:t="HM2"
+    tag:t="hspl"
+    tag:t="spgZ"
+    tag:t="stbl"
+    tag:t="SCN"
+    tag:t="RIGz"
+    tag:t="FRT"
+  }
+}
+
+game{
+  game_folder:t="/game"
+  resources_folder:t="/game/res"
+  levels_bin_folder:t="/game/levels"
+  physmat:t="/develop/levels/physmat.blk"
+  params:t="/develop/environments/gameParams.blk"
+  car_params:t="/develop/gameBase/config/car_params.blk"
+  texStreamingFile:t="/game/settings.blk"
+  texStreamingBlock:t="texStreaming"
+}
+assets {
+  types {
+    type:t="tex"
+    type:t="prefab"
+    type:t="rendInst"
+    //type:t="fx"
+    type:t="spline"
+    type:t="land"
+    type:t="composit"
+    type:t="grass"
+    type:t="mat"
+    type:t="physObj"
+    type:t="fastPhys"
+    type:t="tifMask"
+    type:t="animTree"
+    type:t="animChar"
+    type:t="stateGraph"
+    type:t="shared"
+    type:t="vehicle"
+    type:t="vehicleDesc"
+
+    type:t="dynModel"
+    type:t="skeleton"
+    type:t="a2d"
+    type:t="collision"
+//    type:t="cloud"
+    type:t="apexDestr"
+    type:t="csg"
+  }
+  base:t="develop/assets"
+
+  //gameRes:t="#gameRes"
+  //ddsxPacks:t="#gameRes"
+  //ignorePrebuiltAssetTypes {}
+  //prebuiltGameResFolder:t="game/res"
+
+  export {
+    // list of types to be exported (other types are skipped during export)
+    types {
+      type:t="tex"
+      type:t="rendInst"
+      type:t="dynModel"
+      type:t="skeleton"
+      //type:t="fx"
+      type:t="a2d"
+      type:t="physObj"
+      type:t="fastPhys"
+      type:t="collision"
+      type:t="animTree"
+      type:t="stateGraph"
+      type:t="animChar"
+      type:t="land"
+      type:t="vehicle"
+      type:t="vehicleDesc"
+      type:t="mat"
+      type:t="apexDestr"
+    }
+
+    // file name for persistent cache to be used during export
+    cache:t="/develop/.cache"
+    useCache2Fast:b=yes
+    // per-target setup of destination folder for export
+    profiles{
+      dedicatedServer{
+        strip_d3d_res:b=yes
+        collapse_packs:b=yes
+        reject_exp:t="tex"
+        reject_exp:t="fx"
+        reject_exp:t="dynModel"
+        reject_exp:t="animChar"
+        reject_exp:t="stateGraph"
+        reject_exp:t="animTree"
+        reject_exp:t="a2d"
+        reject_exp:t="fastPhys"
+        reject_exp:t="apexDestr"
+        reject_exp:t="rendInst"
+      }
+    }
+    destination {
+      PC:t="/game/res"
+      PC~dedicatedServer:t="/gameServer/res"
+      iOS:t="/game.iOS/res"
+      and:t="/game.and/res"
+
+      additional {
+        PC:t="game/content"
+        PC~dedicatedServer:t="/gameServer/content"
+        iOS:t="game.iOS/content"
+        and:t="game.and/content"
+
+        suffix:t="res/"
+        // when gluePackageName is set, res/tex pack name is glued as:
+        //   $(PACKAGE_NAME)$(gluePackage)$(PACK_NAME)
+        // sample values:
+        //   none -> content/europe/res/berlin.dxp.bin
+        //   "/"  -> content/europe/res/europe/berlin.dxp.bin
+        //   "_"  -> content/europe/res/europe_berlin.dxp.bin
+        gluePackage:t="_"
+      }
+    }
+    // per-target setup of grpHdr cache in VROMFS for export
+    destGrpHdrCache {
+      gameRelatedPath:t="."
+      PC:t="game/res/grp_hdr.vromfs.bin"
+      PC~dedicatedServer:t="gameServer/res/grp_hdr.vromfs.bin"
+      iOS:t="game.iOS/res/grp_hdr.vromfs.bin"
+      and:t="game.and/res/grp_hdr.vromfs.bin"
+    }
+
+    packages {
+      defaultOn:b=yes
+
+      pkg_dev {
+        iOS:b=no
+        and:b=no
+      }
+      pkg_main {
+        iOS:b=no
+        and:b=no
+      }
+      hq_tex {
+        iOS:b=no
+        and:b=no
+      }
+    }
+
+      // prefix to strip from all pack filepaths
+    stripPrefix:t="assets"
+    // prefix to add for texture pack: destination+addTexPrefix+stripPrefix(pack)
+    addTexPrefix:t=""
+    // name of pack list file to maintain current list of valid packs
+    packlist:t="respacks.blk"
+
+    // defaults for root folder (to be used when root folder uses "*parent"
+    defaultDdsxTexPack:t="root.dxp.bin"
+    //defaultGameResPack:t="root.grp"
+
+    // default export settings for folders; can be full pack path or special key
+    // special keys:
+    //   "*name"    - use folder name as pack name (default extension is added)
+    //   "*path"    - use full folder path as pack name (default extension is added)
+    //   "*parent"  - use pack name of parent folder (recursive)
+    //   ""         - don't write pack
+    folderDefaults {
+      ddsxTexPack:t="*parent"
+      gameResPack:t="*parent"
+    }
+
+    // list of export plugin locations (order does matter!)
+    // 'folder' scans all *.dll in specified location, "*common" means daBuild/exp folder
+    // 'plugin' adds single exporter DLL
+    plugins {
+      folder:t="/tools/exp_plugins"
+      folder:t="*common"
+      //plugin:t="/tools/exp_plugins/aces.dll"
+    }
+
+    perTypeDest {
+      package {
+      }
+      pack {
+        tifMask:t="masks_pack.grp"
+        land:t="landc_pack.grp"
+        collision:t="collision_pack.grp"
+      }
+    }
+  }
+
+  build {
+    stateGraph{
+      cppOutDir:t="/prog/anim"
+    }
+    dynModel {
+//      checks:i=2
+      ignoreMappingInPrepareBillboardMesh:b=yes
+      enableMeshNodeCollapse:b=no
+
+      remapShaders {
+        simple:t="dynamic_simple"
+        dynamic_simple:t="dynamic_simple"
+        dynamic_null:t="dynamic_null"
+        propeller_front:t="propeller_front"
+        propeller_side:t="propeller_side"
+        dynamic_glass_chrome:t="dynamic_glass_chrome"
+        dynamic_masked_chrome:t="dynamic_masked_chrome"
+        dynamic_masked_chrome_bump:t="dynamic_masked_chrome_bump"
+        dynamic_masked_glass_chrome:t="dynamic_masked_glass_chrome"
+        dynamic_illum:t="dynamic_illum"
+        dynamic_mirror:t="dynamic_mirror"
+        dynamic_alpha_blend:t="dynamic_alpha_blend"
+        glass_crack:t="glass_crack"
+        collimator:t="collimator"
+        aces_weapon_fire:t="aces_weapon_fire"
+
+        land_mesh_combined:t="dynamic_land_mesh_combined"
+        land_mesh_combined_2x:t="dynamic_land_mesh_combined_2x"
+        random_grass:t="random_grass"
+        tracer_head:t="tracer_head"
+        gi_black:t=""
+      }
+    }
+
+    rendInst {
+      //checks:i=2
+      ignoreMappingInPrepareBillboardMesh:b=yes
+      descListOutPath:t="riDesc"
+
+      remapShaders {
+        rendinst_impostor:t="rendinst_impostor"
+        dynamic_simple:t="rendinst_simple"
+        simple_aces:t="rendinst_simple"
+        dynamic_simple_colored:t="rendinst_simple_colored"
+        dynamic_simple_layered:t="rendinst_simple_layered"
+        dynamic_tree:t="rendinst_tree"
+        dynamic_tree_colored:t="rendinst_tree_colored"
+        dynamic_alpha_blend:t="rendinst_simple"
+        dynamic_facing_leaves:t="rendinst_facing_leaves"
+        dynamic_glass_chrome:t="rendinst_glass_chrome"
+        gi_black:t=""
+      }
+    }
+
+    skeleton {
+      //checks:i=3
+    }
+
+    tex {
+      defMaxTexSz:i=4096
+      iOS {defMaxTexSz:i=1024;}
+      and {defMaxTexSz:i=1024;}
+    }
+
+    preferZLIB:b=yes
+    writeDdsxTexPackVer:i=3
+    writeGameResPackVer:i=3
+    maxJobs:i=8
+  }
+}
+
+level_metrics {
+  whole_level {
+   textures_size:r=400    //max total textures size in megabytes
+   level_size:r=300       //max level size in megabytes
+   textures_count:i=600   //max textures count
+  }
+
+  plugin {
+    name:t="Collision"  //menu name
+    max_size:r=40       //max size of collision data in megabytes
+  }
+
+  plugin {
+    name:t="Occluders"    //menu name
+    max_triangles:i=3000  //max triangles count
+  }
+
+  plugin {
+    name:t="Environment"    //menu name
+    max_faces:i=50          //max faces count
+    znear_min:r=0.05        //min z-near
+    znear_max:r=5         //max z-near
+    zfar_min:r=60.0         //min z-far
+    zfar_max:r=200000.0      //max z-far
+    z_ratio_max:r=500000.0   //max of (z-far - z-near) / z-near
+  }
+}
+
+dagored_visibility_tags {
+  plugin { name:t="Environment";                        tags:t="Collision, CurrentInGame, Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="SGeometry";                          tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="Mission Editor";                     tags:t="Gameplay"; }
+  plugin { name:t="Landscape";                          tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="Collision";                          tags:t="Collision"; }
+  plugin { name:t="Scene View";                         tags:t="CurrentInGame"; }
+
+  plugin { name:t="(srv) Render instance entities";     tags:t="Game, Gameplay, HeightMap, LandMesh, CurrentInGame"; }
+  plugin { name:t="(srv) Effect entities";              tags:t="Game, Gameplay, HeightMap, LandMesh, CurrentInGame"; }
+  plugin { name:t="(srv) Prefab entities";              tags:t="Game, HeightMap, LandMesh"; }
+  plugin { name:t="(srv) DynModel entities";            tags:t="Gameplay"; }
+  plugin { name:t="(srv) AnimChar entities";            tags:t="Gameplay"; }
+  plugin { name:t="(srv) Invalid entities";             tags:t="HeightMap, LandMesh"; }
+
+  plugin { name:t="(filter) HeightMap";                 tags:t="HeightMap"; }
+  plugin { name:t="(filter) LandMesh";                  tags:t="Game, Gameplay, LandMesh"; }
+  plugin { name:t="(filter) Generated by spline";       tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="(filter) Generated by polygon";      tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="(filter) Show entity visual geom";   tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="(filter) Show entity collision geom";tags:t="Collision"; }
+  plugin { name:t="(filter) Generated by landclass map";tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+  plugin { name:t="(filter) Distinct entities";         tags:t="Game, Gameplay, HeightMap, LandMesh"; }
+}
+
+dagored_disabled_plugins{
+  disable:t="(filter) CSG"
+  disable:t="CSG"
+  disable:t="AirfieldLayouts"
+  disable:t="L2D"
+  disable:t="(srv) Grass"
+//  disable:t="(srv) Phys object entities"
+//  disable:t="(filter) Road geom and objects"
+  disable:t="landClassViewer"
+  disable:t="IvyGen"
+  disable:t="sounds"
+  disable:t="Light"
+  disable:t="(srv) Built Scene View"
+  disable:t="Streaming Scene View"
+  disable:t="(filter) Snow sources"
+  disable:t="(filter) Light objects geom"
+  //disable:t="ScnExport"
+  //disable:t="Occluders"
+//  disable:t="(srv) Render instance entities"
+//  disable:t="(srv) Invalid entities"
+  disable:t="(filter) Water surface geom"
+  disable:t="Scene View"
+}
+
+lightmap{
+  High{
+    passes:i=4;cub5:b=no;perLight:b=yes
+    map{size:i=64;size:i=128;size:i=64;size:i=64;size:i=64;}
+  }
+}
+
+
+//plugin-specific data
+projectDefaults{
+  disableWater:b=yes
+
+  riMgr {
+    type:t="collision"
+    gridCellSize:r=2048
+    subGridSize:i=8
+    minGridCellSize:r=512
+    minGridCellCount:i=16
+    writeOptTree:b=yes
+    packedRIBB:b=yes
+    gen {
+      PC:b=yes
+      and:b=yes
+      iOS:b=yes
+    }
+  }
+  prefabMgr {
+    clipmapShaderRE:t="mesh_combined|land_mesh_height_decal"
+  }
+  envi{
+    //type:t="collision"
+    type:t="skies"
+    znear:r=0.1
+    zfar:r=20000
+
+    skiesFilePathPrefix:t="develop/"
+    skiesWeatherTypes:t="environments/weather_types.blk"
+    skiesPresets:t="environments/weather_preset_*.blk"
+    skiesGlobal:t="environments/global.blk"
+
+    daSkiesDepthTex:t="main_intzDepthTex"
+
+    enviNames {
+      morning:b=yes
+      day:b=yes
+      evening:b=yes
+      night:b=yes
+    }
+
+    skies{
+    }
+  }
+  hmap{
+    type:t="aces"
+  }
+  scnExport{
+    removeInsideFaces:b=false
+  }
+
+  preferZLIB:b=yes
+}
+
+shader_glob_vars_scheme
+{
+  common
+  {
+    assetViewer
+    {
+      caption:t="show_no_aa"
+      show_no_aa:i = 0
+    }
+  }
+}
+
+heightMap {
+  useMeshSurface:b=true
+  requireTileTex:b=true
+  hasColorTex:b=false
+  hasLightmapTex:b=true
+  storeNxzInLtmapTex:b=true
+
+  genFwdRadius:r=10000
+  genBackRadius:r=5000
+  genDiscardRadius:r=12500
+
+  landClassLayers {
+    layer {
+      name:t="detailTex"  // layer name
+      bits:i=4            // layer bit width
+
+      attr:t="detTexSlot" // optional list of named attributes
+      //attr:t="landClassSlot"
+    }
+    layer {
+      name:t="land"
+      bits:i=4
+
+      attr:t="landClassSlot"
+    }
+    layer {
+      name:t="adds"
+      bits:i=4
+
+      attr:t="landClassSlot"
+    }
+    layer {
+      name:t="importanceMask"
+      bits:i=8
+      attr:t="importanceMaskSlot"
+    }
+  }
+
+  lightmapCvtProps {
+    fmt:t="DXT5"
+    swizzleARGB:t="G0RB"
+    addr:t="mirror"
+    hqMip:i=0;mqMip:i=0;lqMip:i=0
+    gamma:r=1
+  }
+}
+
+
+
+
+additional_platforms
+{
+//  platform:t="iOS"
+//  platform:t="and"
+}
+
+parameters {
+  maxTraceDistance:r=15000
+}
+
+AssetLight
+{
+  //texture_name:t="develop/assets/gameRes/cube/stalingrad_noon_cubemap.dds"
+  //shader_var:t="dynamic_cube_tex"
+  blur_lods:b = 1
+
+  bound_with_camera:b=yes
+}
+
+defProjectLocal {
+  freeCamera{
+    move_step:r=160
+    strife_step:r=160
+    control_multiplier:r=20
+  }
+
+  maxCamera{
+    move_step:r=80
+    strife_step:r=80
+    control_multiplier:r=12
+  }
+}
+
+csgEntityView{
+  small-tower {
+    p:p2= -5,  -5
+    p:p2= -5,   5
+    p:p2=  5,   5
+    p:p2=  5,  -5
+  }
+  rectangle {
+    p:p2=-20, -12
+    p:p2=-20,  12
+    p:p2= 20,  12
+    p:p2= 20, -12
+  }
+  circle-oct-tower {
+    p:p2= -5,  -5
+    p:p2=-7.07, 0
+    p:p2= -5,   5
+    p:p2=  0, 7.07
+    p:p2=  5,   5
+    p:p2= 7.07, 0
+    p:p2=  5,  -5
+    p:p2=  0,-7.07
+    scale:r=2
+  }
+  triangle {
+    p:p2=-20, -12
+    p:p2=  0,  12
+    p:p2= 20, -12
+  }
+  complex {
+    p:p2= 10, -20
+    p:p2= 10, -27
+    p:p2=  9, -29
+    p:p2=  7, -30
+    p:p2=-37, -30
+    p:p2=-39, -29
+    p:p2=-40, -27
+    p:p2=-40,   0
+    p:p2=-42,   5
+    p:p2=-42,  15
+    p:p2=-40,  20
+    p:p2=-40,  27
+    p:p2=-37,  30
+    p:p2= 57,  30
+    p:p2= 60,  27
+    p:p2= 60, -30
+    p:p2= 18, -30
+    p:p2= 16, -29
+    p:p2= 15, -27
+    p:p2= 15, -20
+    p:p2= 50, -20
+    p:p2= 50,  20
+    p:p2=-30,  20
+    p:p2=-30, -20
+  }
+  double-T {
+    p:p2= -5,  -5
+    p:p2= -5, -15
+    p:p2=-15, -15
+    p:p2=-15,  15
+    p:p2= -5,  15
+    p:p2= -5,   5
+    p:p2=  5,   5
+    p:p2=  5,  15
+    p:p2= 15,  15
+    p:p2= 15, -15
+    p:p2=  5, -15
+    p:p2=  5,  -5
+  }
+}

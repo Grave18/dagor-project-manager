@@ -11,6 +11,7 @@ const { afterEach } = test;
 const extensionManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
 const commands = new Map();
+const executedCommands = [];
 const errors = [];
 const messages = [];
 const launches = [];
@@ -28,6 +29,7 @@ let fakeChild;
 let webviewView;
 let fakeTerminal;
 let quickPickSelection;
+let inputBoxValue = 'NewDemo';
 const terminals = [];
 
 class FakeEventEmitter {
@@ -58,7 +60,10 @@ const vscode = {
   RelativePattern: class { constructor(base, pattern) { this.base = base; this.pattern = pattern; } },
   commands: {
     executeCommand(command, key, value) {
+      executedCommands.push({ command, key, value });
       if (command === 'setContext') contextKeys.set(key, value);
+      const registeredCommand = commands.get(command);
+      if (registeredCommand) return Promise.resolve(registeredCommand(key, value));
       return Promise.resolve();
     },
     registerCommand(name, callback) {
@@ -104,6 +109,7 @@ const vscode = {
       quickPicks.push({ items, options });
       return Promise.resolve(items.find(item => item.label === quickPickSelection) || items[0]);
     },
+    showInputBox() { return Promise.resolve(inputBoxValue); },
     createOutputChannel() {
       outputChannel = new FakeOutputChannel();
       return outputChannel;
@@ -221,7 +227,7 @@ fs.writeFileSync(folderFile, '');
 sceneFiles = [levelFile, secondLevelFile, outerSpaceLevelFile];
 applicationFiles = [applicationFile, outerSpaceApplication];
 
-const context = { subscriptions: [] };
+const context = { subscriptions: [], extensionPath: path.resolve(__dirname, '..') };
 extension.activate(context);
 
 afterEach(() => {
@@ -233,7 +239,9 @@ afterEach(() => {
   fakeTerminal = undefined;
   terminals.length = 0;
   quickPicks.length = 0;
+  executedCommands.length = 0;
   quickPickSelection = undefined;
+  inputBoxValue = 'NewDemo';
 });
 
 test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
@@ -272,6 +280,17 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.openWithBlkEditor',
     'dagorProjectManager.openWithDaEditor',
     'dagorProjectManager.openWithDaViewer',
+    'dagorProjectManager.revealContextTarget',
+    'dagorProjectManager.revealContextTargetInOS',
+    'dagorProjectManager.copyContextTargetName',
+    'dagorProjectManager.copyContextTargetFullname',
+    'dagorProjectManager.runSceneInGame',
+    'dagorProjectManager.buildAllFromContext',
+    'dagorProjectManager.buildCodeFromContext',
+    'dagorProjectManager.buildShadersFromContext',
+    'dagorProjectManager.buildAssetsFromContext',
+    'dagorProjectManager.buildVromfsFromContext',
+    'dagorProjectManager.buildGuiFromContext',
     'dagorProjectManager.refreshProjects',
     'dagorProjectManager.openSceneWithDaEditor',
     'dagorProjectManager.openProjectWithDaViewer',
@@ -301,6 +320,53 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
       'dagorProjectManager.folderRunCommand'
     ]
   );
+});
+
+test('places Add Project below the project list, routes it, and refreshes after creation', async () => {
+  await refreshCatalog();
+  const html = webviewView.webview.html;
+  assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project"[^>]*>Add Project<\/button><\/div>/);
+  assert.match(html, /getElementById\('add-project'\)\.addEventListener\('click'/);
+
+  fs.writeFileSync(path.join(tempDirectory, 'build_all.py'), '# engine marker');
+  fs.mkdirSync(path.join(toolsDirectory, 'dagor_cdk'), { recursive: true });
+  const catalog = providers.get('dagorProjectManager.projects').catalog;
+  let refreshes = 0;
+  const refresh = catalog.refresh.bind(catalog);
+  catalog.refresh = async (...args) => { refreshes++; return refresh(...args); };
+  const project = path.join(tempDirectory, inputBoxValue);
+  const generatedApplication = path.join(project, 'application.blk');
+  const generatedLevel = path.join(project, 'develop', 'levels', inputBoxValue, `${inputBoxValue}.level.blk`);
+  applicationFiles.push(generatedApplication);
+  sceneFiles.push(generatedLevel);
+  try {
+    await webviewView.webview.send({ type: 'addProject' });
+    assert.ok(executedCommands.some(item => item.command === 'dagorProjectManager.generateProject'));
+    assert.ok(fs.existsSync(path.join(project, 'application.blk')));
+    assert.ok(fs.existsSync(generatedLevel));
+    assert.equal(path.dirname(project), tempDirectory);
+    const generatedProject = catalog.projects.find(item => item.root === project);
+    assert.ok(generatedProject?.scenes.some(scene => scene.label === inputBoxValue));
+    assert.deepEqual(generatedProject.games, []);
+    const shaderBuild = launches.find(launch => launch.args?.[0] === path.join(project, 'prog', 'build.py'));
+    assert.ok(shaderBuild, 'expected project creation to start the shader bootstrap build');
+    assert.deepEqual(shaderBuild.args.slice(1), ['editor_shaders', 'assets']);
+    assert.equal(shaderBuild.options.cwd, path.join(project, 'prog'));
+    await webviewView.webview.send({ type: 'selectProject', project: generatedApplication });
+    assert.match(webviewView.webview.html, /Build Project[\s\S]*Open Scene[\s\S]*NewDemo/);
+    assert.match(webviewView.webview.html, /Run Game[\s\S]*Game executables should be located in game\//);
+    assert.ok(refreshes > 0);
+    assert.match(messages.at(-1), /NewDemo/);
+    assert.equal(extensionManifest.contributes.commands.find(item => item.command === 'dagorProjectManager.generateProject').title,
+      'Add Dagor Project');
+  } finally {
+    fakeChild?.emit('exit', 0);
+    applicationFiles.splice(applicationFiles.indexOf(generatedApplication), 1);
+    sceneFiles.splice(sceneFiles.indexOf(generatedLevel), 1);
+    fs.rmSync(project, { recursive: true, force: true });
+    fs.rmSync(path.join(tempDirectory, 'build_all.py'), { force: true });
+    fs.rmSync(path.join(toolsDirectory, 'dagor_cdk'), { recursive: true, force: true });
+  }
 });
 
 test('limits the folder context submenu to discovered Dagor project roots', async () => {
@@ -333,7 +399,7 @@ test('runs project-folder actions against the project under the Explorer selecti
   assert.equal(launches.at(-1).options.cwd, gameDirectory);
 
   await commands.get('dagorProjectManager.folderRunCommand')(uri(workspaceRoot));
-  assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['direct-run-stalker', 'run-custom']);
+  assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['direct-run-stalker']);
   assert.equal(fakeTerminal.options.cwd, gameDirectory);
   assert.deepEqual(fakeTerminal.sent, [{ text: `call "${directRunCommand}"`, addNewLine: true }]);
 });
@@ -395,9 +461,9 @@ test('renders projects separately with only their own scenes', async () => {
   assert.match(expanded, /Select components to build/);
   assert.match(expanded, /Open Scene/);
   assert.match(expanded, /\[hidden\]\{display:none!important\}/);
-  assert.match(expanded, /data-action="toggleScenes" aria-expanded="true"[^>]*>[\s\S]*?<div class="scene-list">/);
-  assert.match(expanded, /data-action="toggleGames" aria-expanded="true"[^>]*>[\s\S]*?<div class="game-list">/);
-  assert.match(expanded, /data-action="toggleGameCommands" aria-expanded="true"[^>]*>[\s\S]*?<div class="game-command-list">/);
+  assert.match(expanded, /data-action="toggleScenes"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="scene-list">/);
+  assert.match(expanded, /data-action="toggleGames"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="game-list">/);
+  assert.match(expanded, /data-action="toggleGameCommands"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="game-command-list">/);
   assert.ok(expanded.indexOf('Open Scene') < expanded.indexOf('Run Game'));
   assert.match(expanded, /Run Game/);
   assert.ok(expanded.includes(`data-game="${gameExe}"`));
@@ -408,7 +474,7 @@ test('renders projects separately with only their own scenes', async () => {
   assert.ok(!expanded.includes('<span>project_stalker-ded-dev</span>'));
   assert.ok(expanded.indexOf('Run Game') < expanded.indexOf('Run Command'));
   assert.ok(expanded.includes(`data-game-command="${directRunCommand}"`));
-  assert.ok(expanded.includes(`data-game-command="${nestedRunCommand}"`));
+  assert.ok(!expanded.includes(`data-game-command="${nestedRunCommand}"`));
   assert.ok(!expanded.includes('deeplyNestedGameDirectory'));
   assert.ok(!expanded.includes('ignored.exe'));
   assert.doesNotMatch(expanded, /Generate Project/);
@@ -580,7 +646,7 @@ test('the build button changes to stop while a build runs and stops the selected
   });
 
   await webviewView.webview.send({ type: 'action', action: 'generate', project });
-  assert.match(messages.at(-1), /project_stalker.*not implemented/i);
+  assert.ok(executedCommands.some(item => item.command === 'dagorProjectManager.generateProject'));
 });
 
 test('rejects non-local URIs and reports missing executables', async () => {

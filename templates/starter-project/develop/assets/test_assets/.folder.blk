@@ -1,0 +1,24 @@
+export {
+  ddsxTexPack:t="*name_src"
+  gameResPack:t="*name_src"
+}
+
+// renderable geometry -> class "rendInst"
+// file foo.lod00.dag becomes resource "foo"
+virtual_res_blk{
+  find:t="^(.*)\.lod00\.dag$"
+  className:t="rendInst"
+  contents{
+    clip_in_game:b=yes
+    clip_in_editor:b=yes
+    sample_size:r=10
+    lighting_type:i=0
+    tm:m=[[1, 0, 0] [0, 1, 0] [0, 0, 1] [0, 0, 0]]
+
+    // explicit LOD list; $1 is the resource name from the find pattern
+    lod{
+      range:r=70
+      fname:t="$1.lod00.dag"
+    }
+  }
+}

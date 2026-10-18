@@ -1,0 +1,83 @@
+
+# --- Build output and binaries -------------------------------------------
+game/windows-x86_64/
+_output/
+tools/*
+*.exe
+*.lib
+*.pdb
+*.obj
+*.ilk
+*.STAMP
+
+# --- docs ---
+!/tools/TOOLS.md
+
+# --- Resources produced by daBuild ----------------------------------------
+game/res/
+game/compiledShaders/
+develop/.cache/
+develop/gui/pc.out.ui/
+develop/.asset-local/
+develop/dabuild-dbg*
+dabuild-dbg*
+*.grp
+*.dxp.bin
+*.riDesc.bin
+application.blk.bin
+
+# --- Scene content -------------------------------------------------------
+game/content/
+game/content.hq/
+
+# --- Other generated -----------------------------------------------------
+# copied from prog/ during build
+game/sound/
+game/ui/
+game/config/
+game/gamedata/
+# packed by: py .\build.py vromfs
+game/*.vromfs.bin
+game/.game_logs/
+game/Screenshots/
+game/pid.txt
+game/config.blk
+
+# --- Misc ----------------------------------------------------------------
+*.pyc
+__pycache__/
+build_out.txt
+build_err.txt
+archive_phase0/
+.vscode/
+
+# --- Logs, crash dumps, temporary --------------------------------------
+.logs/
+*.log
+*.logerr
+*.logwarn
+logerr
+logwarn
+fatalerr
+debug.log
+*.dmp
+crashDump-*.dmp
+last_debug
+*.tmp
+*.bak
+*.swp
+*~
+*_log*
+
+# --- Shader compiler artifacts ------------------------------------------
+prog/shaders/ShaderLog*
+game/shaders_sha~*/
+
+# --- OS / editor --------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+
+# --- kshema dahlia: compiled blk caches from daBuild --------------------
+*.blk.bin

@@ -1,0 +1,64 @@
+// Asset rules for develop/assets
+// Each virtual_res_blk covers a whole file type; one folder holds many assets.
+
+export {
+  ddsxTexPack:t="*name_src"
+  gameResPack:t="*name_src"
+}
+
+// diffuse / normal textures -> class "tex"
+virtual_res_blk{
+  find:t="^(.*_n(_dmg|_expl|_inside)?)\.(tga|tif)$"
+  className:t="tex"
+  contents{
+    convert:b=yes;fmt:t="DXT1|DXT5"
+    gamma:r=1
+    mipFilter:t="filterKaiser";mipFilterAlpha:r=40;mipFilterStretch:r=2
+    addrU:t="wrap";addrV:t="wrap"
+    hqMip:i=0;mqMip:i=1;lqMip:i=2
+    swizzleARGB:t="RAG0"
+  }
+}
+
+virtual_res_blk{
+  find:t="^(.*)\.(tga|tif)$"
+  className:t="tex"
+  contents{
+    convert:b=yes;fmt:t="DXT1|DXT5"
+    mipFilter:t="filterKaiser";mipFilterAlpha:r=40;mipFilterStretch:r=2
+    addrU:t="wrap";addrV:t="wrap"
+    hqMip:i=0;mqMip:i=1;lqMip:i=2
+  }
+}
+
+// collision proxy -> class "collision"
+// file foo_dm.dag becomes resource "foo_collision"
+virtual_res_blk{
+  find:t="^(.*)_dm\.dag$"
+  className:t="collision"
+  name:t="$1_collision"
+  contents{
+    collapseAndOptimize:b=yes
+    buildFRT:b=yes
+  }
+}
+
+// renderable geometry -> class "rendInst"
+// file foo.lod00.dag becomes resource "foo"
+virtual_res_blk{
+  find:t="^(.*)\.lod00\.dag$"
+  className:t="rendInst"
+  contents{
+    clip_in_game:b=yes
+    clip_in_editor:b=yes
+    sample_size:r=10
+    lighting_type:i=0
+    tm:m=[[1, 0, 0] [0, 1, 0] [0, 0, 1] [0, 0, 0]]
+
+    // explicit LOD list; $1 is the resource name from the find pattern
+    lod{
+      range:r=70
+      fname:t="$1.lod00.dag"
+    }
+  }
+}

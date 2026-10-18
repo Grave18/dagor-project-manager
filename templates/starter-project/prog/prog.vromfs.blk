@@ -1,0 +1,83 @@
+platform:t="PC"
+outputRoot_PC:t="../game/"
+output:t="__PROJECT_NAME__.vromfs.bin"
+
+allowMkDir:b=yes
+pack:b=true
+sign_private_key:t=""
+sign_digest:t="sha256"
+rootFolder:t="."
+
+folder {
+  path:t="scripts/"
+  dest_path:t="scripts/"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.json"
+  wildcard:t="*.blk"
+  wildcard:t="*.nut"
+  wildcard:t="*.das"
+  wildcard:t="*.patch"
+  wildcard:t="project.das_project"
+}
+
+folder {
+  path:t="../../prog/1stPartyLibs/daScript/daslib"
+  dest_path:t="daslib"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="../../prog/1stPartyLibs/daScript/modules/dasImgui/daslib"
+  dest_path:t="daslib"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="../../prog/daNetGame/scripts/das/debug"
+  dest_path:t="das/debug"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="../../prog/gameLibs/das"
+  dest_path:t="gameLibs/das"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="../../prog/gameLibs/upscale_sampling"
+  dest_path:t="gameLibs/upscale_sampling"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="../../prog/daNetGameLibs"
+  dest_path:t="danetlibs"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.blk"
+  wildcard:t="*.das"
+}
+
+folder {
+  path:t="gameBase/"
+  dest_path:t="./"
+  scan_folder:b=true
+  scan_subfolders:b=true
+  wildcard:t="*.json"
+  wildcard:t="*.blk"
+  wildcard:t="*.nut"
+  wildcard:t="*.das"
+  wildcard:t="*.patch"
+}

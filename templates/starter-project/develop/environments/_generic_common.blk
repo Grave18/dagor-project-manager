@@ -1,0 +1,42 @@
+//good weather common part
+
+rainSplashFxType:t = "rain_splash"
+rainSplashEnabled:b = no
+rainSound:t = "rain"
+
+skyLightFactor:r = 1
+cloudDropletsScale:r = 0.5
+cloudAircraftReflectMul:r = 4
+cloudAircraftReflectPowerMul:r = 0.5
+
+clouds_fly_cube_tex:t = "cloud_fly_cube"
+
+rainDroplets
+{
+  droplets_scale:r = 1
+  droplets_reflection_min:r = 0.1
+  droplets_reflection_max:r = 0.3
+  droplets_size_scale:p3 = 20, 20, 4
+  droplets_speed:r = 0.9
+}
+
+/*
+//REMOVED - it's silently overridden by all weather types
+
+windParams
+{
+  defaultWindSpeed:r = 0.1
+  height0:r = 1000
+  turbulence0:r = 1.0
+  windMul0:r = 1
+  height1:r = 2000
+  turbulence1:r = 3.0
+  windMul1:r = 1
+  height2:r = 8000
+  turbulence2:r = 1.5
+  windMul2:r = 0.01
+  // wind spead multiplier affect on speed from previous height
+  // so windSpeed(5000) = windSpeed(2000) * windMul2 = (windSpeed(1000) * windMul1) * windMul2 = 
+  // ((windSpeed(0) * windMul0) * windMul1) * windMul2
+}
+*/

@@ -1,0 +1,21 @@
+hRes {
+  hRes:i=480
+  hRes:i=600
+  hRes:i=720
+  hRes:i=768
+  hRes:i=800
+  hRes:i=864
+  hRes:i=900
+  hRes:i=960
+  hRes:i=1024
+  hRes:i=1050
+  hRes:i=1080
+  hRes:i=1200
+  hRes:i=1440
+  hRes:i=1800
+  hRes:i=2160
+}
+
+copyto:t="../pc.out.ui"
+forcePow2:b=true
+include fontgen.blk

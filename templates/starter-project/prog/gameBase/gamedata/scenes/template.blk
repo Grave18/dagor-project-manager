@@ -1,0 +1,20 @@
+[scene]
+name:t="template_scene"
+
+[entity]
+name:t="floor"
+transform:t="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1"
+mesh:t="content/test_assets/test_cube.lod00.dag"
+collider:t="box"
+
+[entity]
+name:t="camera"
+transform:t="1 0 0 0  0 1 0 0  0 0 1 0  2 3 5 1"
+mesh:t="content/test_assets/test_cube.lod00.dag"
+collider:t="none"
+
+[entity]
+name:t="cube"
+transform:t="1 0 0 0  0 1 0 0  0 0 1 0  0 2 0 1"
+mesh:t="content/test_assets/test_cube.lod00.dag"
+collider:t="box"

@@ -1,0 +1,30 @@
+/* in code:"clear","good","hazy","cloudy","shower","poor","blind","rain","thunder"*/
+
+clear{
+  include "_clear.blk"
+}
+good{
+  include "_good.blk"
+}
+hazy{
+  include "_hazy.blk"
+}
+cloudy{
+  include "_cloudy.blk"
+}
+poor{
+  include "_poor.blk"
+}
+blind{
+  include "_blind.blk"
+}
+rain{
+  include "_rain.blk"
+}
+//shower{}
+storm{
+  include "_thunder.blk"
+}
+thunder{
+  include "_thunder.blk"
+}

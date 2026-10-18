@@ -1,0 +1,68 @@
+scatteringEffect:p2 = 0,0
+
+
+cloudDropletsScale:r = 0.5
+cloud_shadow_intensity:r=0.8
+sky{
+  mie_height:p2=1.18571, 1.18571
+  mieG:p2=0.465955, 0.465955
+  betaMScale:p2=1.1153, 1.1153
+  clouds_overcast:p2=0.486133, 0.486133
+}
+
+ground{
+  average_ground_albedo:r=0.7
+  min_ground_offset:r=0
+}
+
+clouds_gen{
+  humidity:p2=0.4,0.4
+  persistence:p2=0.673829, 0.673829
+  asymmetry:p2=0.185254, 0.185254
+  seed:i=23858
+}
+
+clouds_position{
+  sizeX:p2=111, 111
+  sizeZ:p2=99, 99
+  start_altitude:p2=1.500, 1.500
+  thickness:p2=5.17827, 5.17827
+  light_extinction:p2=0.654086, 0.654086
+  amb_extinction_mul:p2=0.831799, 0.831799
+}
+
+clouds_render{
+  silver_lining:p2=0.766922, 0.766922
+  sun_light:p2=0.383386, 0.383386
+  ambient:p2=0.677475, 0.677475
+  silver_lining_eccentricity:p2=0.527487, 0.527487
+}
+
+strata_clouds{
+  amount:p2=0.334305, 0.334305
+  altitude:p2=10.8636, 10.8636
+}
+windParams{
+  defaultWindSpeed:r = 0.1
+  height0:r = 600
+  turbulence0:r = 0.7
+  windMul0:r = 1
+  height1:r = 2000
+  turbulence1:r = 0.7
+  windMul1:r = 1
+  height2:r = 8000
+  turbulence2:r = 0.3
+  windMul2:r = 0.01
+  // wind spead multiplier affect on speed from previous height
+  // so windSpeed(5000) = windSpeed(2000) * windMul2 = (windSpeed(1000) * windMul1) * windMul2 = 
+  // ((windSpeed(0) * windMul0) * windMul1) * windMul2
+}
+wind_strength:r = 4.3
+
+rain{probability:r=0.0002;}
+include "_rain_shower.blk"
+
+dustMul:r = 1
+mudMul:r = 1
+
+include "_generic_common.blk"

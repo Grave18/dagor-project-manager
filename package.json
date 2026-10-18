@@ -20,7 +20,7 @@
   ],
   "main": "./extension.js",
   "scripts": {
-    "test": "node --test test/extension.test.js"
+    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js"
   },
   "contributes": {
     "commands": [
@@ -80,7 +80,7 @@
       },
       {
         "command": "dagorProjectManager.generateProject",
-        "title": "Generate Project (Not Implemented)"
+        "title": "Add Dagor Project"
       },
       {
         "command": "dagorProjectManager.refreshProjects",

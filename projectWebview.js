@@ -99,6 +99,10 @@ class ProjectWebviewProvider {
       await this.catalog.refresh();
       return;
     }
+    if (message.type === 'addProject') {
+      await vscode.commands.executeCommand('dagorProjectManager.generateProject');
+      return;
+    }
 
     const projectData = message.project;
     const project = typeof projectData === 'string'
@@ -147,8 +151,7 @@ class ProjectWebviewProvider {
       } else if (message.action === 'viewer') {
         await this.actions.openProjectDaViewer(project || projectData);
       } else if (message.action === 'generate') {
-        const label = project?.label || projectData?.label || 'Dagor';
-        vscode.window.showInformationMessage(`Project generation for ${label} is not implemented yet.`);
+        await vscode.commands.executeCommand('dagorProjectManager.generateProject');
       }
     } else if (message.type === 'openScene') {
       const scenePath = typeof projectData === 'object'
@@ -340,7 +343,8 @@ class ProjectWebviewProvider {
         .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
         @media(prefers-reduced-motion:reduce){.chevron-icon.animate-expand,.chevron-icon.animate-collapse,.end-chevron{animation:none!important;transition:none!important}}
         @media(max-width:560px){.action-grid{grid-template-columns:1fr}.components{grid-column:1;grid-row:auto}.project-row small,.scene small{display:none}}
-      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div>${projectActions}</main>
+        .add-project-row{display:flex;justify-content:flex-start;margin:3px 0 8px}.add-project-button{padding:2px 8px;color:var(--vscode-textLink-foreground);background:transparent;border:1px solid transparent;border-radius:4px;font:inherit;cursor:pointer}.add-project-button:hover{color:var(--vscode-textLink-activeForeground);background:var(--vscode-list-hoverBackground)}.add-project-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
+      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button">Add Project</button></div>${projectActions}</main>
       <script nonce="${nonce}">
         const vscode=acquireVsCodeApi();
         const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -392,6 +396,7 @@ class ProjectWebviewProvider {
   if(document.getElementById('refresh').disabled)return;
   vscode.postMessage({type:'refresh'});
 });
+document.getElementById('add-project').addEventListener('click',()=>vscode.postMessage({type:'addProject'}));
 const blockButtonsFor2s=()=>{
   const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command]');
   buttons.forEach(btn=>btn.disabled=true);

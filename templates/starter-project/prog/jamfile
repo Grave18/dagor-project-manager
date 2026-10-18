@@ -1,0 +1,87 @@
+Game = __PROJECT_NAME__ ;
+GameMainVromFilePath = __PROJECT_NAME__.vromfs.bin ;
+Root ?= ../.. ;
+Location = __PROJECT_NAME__/prog ;
+
+PlatformArch_windows ?= x86_64 ;
+include $(Root)/prog/_jBuild/defPlatform.jam ;
+
+TargetType ?= exe ;
+Target ?= $(Game) ;
+
+UseModulesAI = no ;
+UseModulesDM = no ;
+UseModulesWeapon = no ;
+if $(Platform) in windows { ExportOptimus ?= yes ; }
+
+ProjectRoot = .. ;
+AotJamfile = $(Root)/prog/daNetGame-das-aot/jamfile ;
+AotCompilerBaseName = $(ProjectRoot)/tools/das-aot/$(Game)-aot ;
+DAS_AOT_COMPILER_OPT = -- --config $(Root)/$(Location)/__PROJECT_NAME___aot_config.blk -sConfig $(Config)
+  --vfs $(Root)/$(Location)/../game/__PROJECT_NAME__.vromfs.bin ;
+
+include $(Root)/prog/daNetGame/setup.jam ;
+
+if $(Platform) in windows { VRDeviceSupport ?= yes ; }
+if $(Dedicated) = yes { Exit $(Target) is not expected to be used as a dedicated server ; }
+
+SetupOutputDir ;
+OutDir = $(ProjectRoot)/game/$(Platform)-$(PlatformArch) ;
+
+local AllSrcFolder_CPP = ;
+local AllSrcFolder_ES = ;
+
+AllSrcFolder_DAS =
+  scripts/das
+  scripts/das/input
+  scripts/das/character_controller
+;
+AllSrcFolder_ES = ;
+AllSrcFolder_CPP = ;
+
+include $(Root)/prog/daNetGame/game.jam ;
+
+SourceES = ;
+DasModulesFolder = ;
+DasModuleFiles = ;
+AllSrcFolder_CPP = main ;
+
+gamePulls_action = make_module_pull_cpp ;
+gamePulls = daECS/core/componentType.h game_pulls
+  actInThread_pull
+;
+AddGamePullsToSources ;
+
+AddIncludes +=
+  $(Root)/prog/daNetGameLibs
+  $(Root)/prog/gameLibs
+;
+
+UseProgLibs +=
+  daNetGame
+  daNetGameLibs/dm/stub
+  daNetGameLibs/package_physobj
+  engine/daECS/delayedAct
+;
+
+include $(Root)/$(Location)/_libs.jam ;
+
+if $(Platform) in windows {
+  if ! $(PlatformArch) in x86_64 { Exit $(Platform)-$(PlatformArch) is not supported! ; }
+  include $(Root)/prog/engine/drv/drv3d_DX12/copy_bundles.jam ;
+  include $(Root)/prog/engine/drv/drv3d_commonCode/copy_bundles.jam ;
+} else {
+  Exit only Windows builds are configured for this template ;
+}
+
+if $(CheckOnly) != yes {
+  gameVersion += //$(VERSION_DOT) //$(VERSION_NUM) //$(BUILD_NUMBER) ;
+  CPPopt += -DVERSION_DOT=$(VERSION_DOT) -DBUILD_NUMBER=$(BUILD_NUMBER) -DVERSION_NUM=$(VERSION_NUM) ;
+}
+
+AutoscanBuildLists $(AllSrcFolder_CPP) : *.cpp : Sources ;
+if $(DAS_AOT_COMPILER) { AutoscanBuildLists $(AllSrcFolder_DAS) : *.das : Sources : ; }
+
+if $(VRDeviceSupport) = yes { include $(Root)/prog/engine/drv/vr_device/bundle.jam ; }
+
+include $(Root)/prog/_jBuild/build.jam ;

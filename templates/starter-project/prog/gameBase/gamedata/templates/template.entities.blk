@@ -1,0 +1,125 @@
+import:t="%danetlibs/renderer/templates/render_settings.template.blk"
+import:t="%danetlibs/renderer/templates/dynamic_lighting.template.blk"
+import:t="%danetlibs/renderer/templates/ui_nodes.template.blk"
+import:t="%danetlibs/frame_graph_renderer/templates/frame_graph_nodes.template.blk"
+import:t="%danetlibs/blurred_ui/templates/blurred_ui.template.blk"
+import:t="game_logic.blk"
+import:t="character_controller.blk"
+
+replicating{
+  replication {_tags:t="net";}
+}
+
+msg_sink{
+  msg_sink{}
+  _use:t="replicating";
+  _singleton:b=yes
+}
+
+glob_input{
+  input{_tags:t="input";}
+  "glob_input:tag"{_tags:t="input";}
+  "glob_input__inputMode:i"{_tags:t="input";}
+}
+
+static_cam{
+  camera__active:b=no
+  "camera_view:tag"{}
+  fov:r=90
+  znear:r=0.01
+  zfar:r=10000
+  transform:m=[[1, 0, 0] [0, 1, 0] [0, 0, 1] [0, 0, 0]]
+  _use:t=replicating
+  "net__inInitialScope:tag"{}
+  "respbase:tag"{_tags:t="server";}
+}
+
+level{
+  level{}
+  level__blk:t=""
+  level__timeRange:p2=9,9
+  level__day:i=21
+  level__month:i=6
+  level__year:i=1941
+  "level__timeVec:array"{}
+  level__timeSeed:i=-1
+  level__timeOfDay:r=9
+  level__weatherSeed:i=-1
+  level__cloudsHoleEnabled:b=yes
+  level__weather:t=""
+  "level__weatherChoice:object"{}
+  "level__loaded:b"{
+    value:b=no
+    _hide:b=yes
+  }
+  level__fpsLimit:i=-1
+  _use:t=replicating
+  _singleton:b=yes
+  nonCreatableObj:b=yes
+}
+
+respawnBase{
+  "active:b"{value:b=yes; _track:b=yes;}
+  transform:m=[[1, 0, 0] [0, 1, 0] [0, 0, 1] [0, 0, 0]]
+  team:i=0
+  "respbase:tag"{_tags:t="server";}
+  "checkpoint__occupiedBy:eid"{}
+}
+
+teamRespawnBase{
+  _use:t="respawnBase"
+  team:i=-1
+}
+
+player{
+  player{}
+  _group{
+    _replicate:b=yes
+    _track:b=yes
+    "possessed:eid"{}
+    "specTarget:eid"{}
+    team:i=-1
+    name:t=""
+    disconnected:b=no
+    player__score:r=0
+  }
+  disconnectedAtTime:r=-1
+  "is_local:b"{_track:b=yes;}
+  platformUid:t=""
+  platform:t=""
+  connid:i=-1
+  canBeLocal:b=yes
+  _use:t=replicating
+  "net__notInInitialScope:tag"{}
+  "activeCamName:t"{_tags:t="gameClient"; value:t="";}
+  "activeCamEid:eid"{_tags:t="gameClient";}
+}
+
+humans_grid{
+  editableObj:b=no
+  _use:t="replicating"
+  _singleton:b=yes
+  grid_holder__type:t="humans"
+  grid_holder__typeHash:i=0
+  grid_holder__cellSize:i=32
+  grid_holder{}
+}
+
+vehicles_grid{
+  editableObj:b=no
+  _use:t="replicating"
+  _singleton:b=yes
+  grid_holder__type:t="vehicles"
+  grid_holder__typeHash:i=0
+  grid_holder__cellSize:i=32
+  grid_holder{}
+}
+
+film_grain_lut{
+  _singleton:b=yes
+  film_grain_lut__gen_params:p4=2.5,0.5,1.0,64
+  _tracked:t="film_grain_lut__gen_params"
+  film_grain_lut{
+    _tags:t="render"
+  }
+}

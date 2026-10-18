@@ -1,0 +1,127 @@
+noteForCuriousHumanBeings:t="Editable starter level for __PROJECT_NAME__"
+lastUniqueId:i=1
+exportPath:t="levels/__PROJECT_NAME__.bin"
+exportPathiOS:t=""
+exportPathand:t=""
+ambient_light_color:c=183, 140, 212, 255
+ambient_light_mult:r=0.025
+direct_light_color:c=250, 174, 102, 255
+direct_light_mult:r=0
+light_direction_alpha:r=0.279253
+light_direction_beta:r=-2.94961
+use_direct_light:b=yes
+tex_quality:i=0
+lightmap_quality:i=0
+is_static_bump_enabled:b=yes
+
+pluginsExport{
+  sceneLighter:b=yes
+  environment:b=yes
+  _acEntMgr:b=yes
+  _builtSceneView:b=yes
+  _collision:b=yes
+  _csgEntMgr:b=yes
+  _dmEntMgr:b=yes
+  _genSpline:b=yes
+  _grassObj:b=yes
+  _hmapObj:b=yes
+  _invalidEntMgr:b=yes
+  _lmeshObj:b=yes
+  _poEntMgr:b=no
+  _prefabEntMgr:b=yes
+  _rend_ent_geom:b=yes
+  _riEntMgr:b=yes
+  _roadObj:b=yes
+  _singleEnt:b=yes
+  _tileLcPoly:b=yes
+  _tileMask:b=yes
+  _waterSurf:b=yes
+  staticGeometry:b=no
+  heightmapLand:b=yes
+  occluders:b=no
+  clipping:b=yes
+}
+
+pluginsExternal{
+  sceneLighter:b=no
+  environment:b=no
+  _acEntMgr:b=no
+  _builtSceneView:b=no
+  _collision:b=no
+  _csgEntMgr:b=no
+  _dmEntMgr:b=no
+  _genSpline:b=no
+  _grassObj:b=no
+  _hmapObj:b=no
+  _invalidEntMgr:b=no
+  _lmeshObj:b=no
+  _poEntMgr:b=no
+  _prefabEntMgr:b=no
+  _rend_ent_geom:b=no
+  _roadObj:b=no
+  _singleEnt:b=no
+  _tileLcPoly:b=no
+  _tileMask:b=no
+  _waterSurf:b=no
+  staticGeometry:b=no
+  heightmapLand:b=no
+  occluders:b=no
+  clipping:b=no
+}
+
+externalSource{
+  sceneLighter:b=no
+  environment:b=no
+  _acEntMgr:b=no
+  _builtSceneView:b=no
+  _collision:b=no
+  _csgEntMgr:b=no
+  _dmEntMgr:b=no
+  _genSpline:b=no
+  _grassObj:b=no
+  _hmapObj:b=no
+  _invalidEntMgr:b=no
+  _lmeshObj:b=no
+  _poEntMgr:b=no
+  _prefabEntMgr:b=no
+  _rend_ent_geom:b=no
+  _roadObj:b=no
+  _singleEnt:b=no
+  _tileLcPoly:b=no
+  _tileMask:b=no
+  _waterSurf:b=no
+  staticGeometry:b=no
+  heightmapLand:b=no
+  occluders:b=no
+  clipping:b=no
+}
+
+externalPathes{
+  sceneLighter:t=""
+  environment:t=""
+  _acEntMgr:t=""
+  _builtSceneView:t=""
+  _collision:t=""
+  _csgEntMgr:t=""
+  _dmEntMgr:t=""
+  _genSpline:t=""
+  _grassObj:t=""
+  _hmapObj:t=""
+  _invalidEntMgr:t=""
+  _lmeshObj:t=""
+  _poEntMgr:t=""
+  _prefabEntMgr:t=""
+  _rend_ent_geom:t=""
+  _roadObj:t=""
+  _singleEnt:t=""
+  _tileLcPoly:t=""
+  _tileMask:t=""
+  _waterSurf:t=""
+  staticGeometry:t=""
+  heightmapLand:t=""
+  occluders:t=""
+  clipping:t=""
+}
+
+disabled_colliders{
+}

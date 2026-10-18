@@ -1,0 +1,9 @@
+name:t=stars.tif
+
+convert:b=yes;fmt:t="DXT1|BC7"
+mipFilter:t=filterStripe
+addrU:t="wrap";addrV:t="wrap"
+hqMip:i=0;mqMip:i=1;lqMip:i=2
+gamma:r=1.0
+
+iOS { fmt:t="ASTC"; }

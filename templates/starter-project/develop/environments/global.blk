@@ -1,0 +1,90 @@
+shader_vars{
+  parallax_shadow_strength:r=5
+  parallax_shadow_length:r=2
+  land_bump_scale:r=1.5
+
+// trees shaking parametres 
+  tree_wind_branch_amp:r = 0.1
+  tree_wind_detail_amp:r = 0.1
+  tree_wind_speed:r = 0.2
+
+  fx_sun_backlight:r=0.6
+  lightmap_to_objects:r=0.4
+  cockpit_glass_sun_mul:r=1.0
+  reinard:i=0
+
+  true_gamma_22:i=1
+  glass_specular_color_mul :r = 15
+  glass_specular_power:r = 50
+
+  specular_detect_land_color:p4=0,0.15,0.3,0//default
+  land_smoothness_detect_color:p4=0.7, 0.7, 0.7, 0 // default value, disabling smoothnes by default
+  smoothness_detection_hardness:r = 4
+  translucency_detection_hardness:r = 4
+  flare_bias:r=-2.7
+  
+  uncharted_white:r=3.0;U_A:r=0.45;U_B:r=0.25;U_C:r=2.05;U_D:r=1.5;U_E:r=0.02;U_F:r=1.05 //steve tonemap tweaked for not dark sun
+//  uncharted_white:r=4.0;U_A:r=0.45;U_B:r=0.25;U_C:r=2.8;U_D:r=1.5;U_E:r=0;U_F:r=1 //steve tonemap (dark sun)
+//  uncharted_white:r=2.0;U_A:r=0.15;U_B:r=0.50;U_C:r=0.10;U_D:r=0.20;U_E:r=0.02;U_F:r=0.30 //DEFAULT - good too
+
+ //variants
+//  uncharted_white:r=4.0;U_A:r=0.22;U_B:r=0.52;U_C:r=0.11;U_D:r=0.25;U_E:r=0.0232;U_F:r=0.591
+//  uncharted_white:r=4.0;U_A:r=0.227;U_B:r=0.14150;U_C:r=0.2475;U_D:r=0.95;U_E:r=0.005;U_F:r=0.148
+//  uncharted_white:r=2.0;U_A:r=0.006;U_B:r=0.1;U_C:r=0.225;U_D:r=0.4;U_E:r=0.005;U_F:r=0.148
+
+
+//  uncharted_white:r=4.0;U_A:r=0.227;U_B:r=0.16350;U_C:r=0.2925;U_D:r=0.78;U_E:r=0.005;U_F:r=0.148//better air perspective
+//  uncharted_white:r=3.0;U_A:r=0.25;U_B:r=0.1450;U_C:r=0.25;U_D:r=0.98;U_E:r=0.02;U_F:r=0.14
+//  uncharted_white:r=3.0;U_A:r=0.20;U_B:r=0.25;U_C:r=0.15;U_D:r=0.20;U_E:r=0.04;U_F:r=0.30
+//  uncharted_white:r=3.0;U_A:r=0.125;U_B:r=0.14;U_C:r=0.528;U_D:r=0.56;U_E:r=0.016;U_F:r=0.180
+//  uncharted_white:r=2.5;U_A:r=0.70;U_B:r=0.50;U_C:r=0.10;U_D:r=0.90;U_E:r=0.03;U_F:r=0.2
+//good looking skies
+//  uncharted_white:r=1.85;U_A:r=0.125;U_B:r=0.14;U_C:r=0.528;U_D:r=0.56;U_E:r=0.016;U_F:r=0.180
+//  uncharted_white:r=1.85;U_A:r=0.125;U_B:r=0.054;U_C:r=0.08;U_D:r=0.485;U_E:r=0.016;U_F:r=0.295
+//  uncharted_white:r=1.85;U_A:r=0.097;U_B:r=0.18;U_C:r=0.08;U_D:r=0.273;U_E:r=0.025;U_F:r=0.480
+//  uncharted_white:r=1.85;U_A:r=0.085;U_B:r=0.34;U_C:r=0.09;U_D:r=0.773;U_E:r=0.03;U_F:r=0.380
+//  uncharted_white:r=1.85;U_A:r=0.097;U_B:r=0.18;U_C:r=0.08;U_D:r=0.273;U_E:r=0.025;U_F:r=0.480
+//  uncharted_white:r=1.85;U_A:r=0.052;U_B:r=0.18;U_C:r=0.08;U_D:r=0.25;U_E:r=0.0253;U_F:r=0.639
+//  uncharted_white:r=2.5;U_A:r=0.052;U_B:r=0.08;U_C:r=0.11;U_D:r=0.25;U_E:r=0.0453;U_F:r=0.639
+//  uncharted_white:r=1.75;U_A:r=0.0365;U_B:r=0.0768;U_C:r=0.15;U_D:r=0.02;U_E:r=0.08;U_F:r=0.35
+//  uncharted_white:r=1.75;U_A:r=0.0365;U_B:r=0.0768;U_C:r=0.22;U_D:r=0.02;U_E:r=0.09;U_F:r=0.3
+//  uncharted_white:r=1.75;U_A:r=0.0365;U_B:r=0.0768;U_C:r=0.15;U_D:r=0.02;U_E:r=0.09;U_F:r=0.3
+
+// good Kirill tonemapping with U_E between Vasya settings (was U_e=0.2
+//  uncharted_white:r=2.5;U_A:r=0.70;U_B:r=0.50;U_C:r=0.10;U_D:r=0.90;U_E:r=0.03;U_F:r=0.2
+//variants
+//  uncharted_white:r=2.5;U_A:r=0.30;U_B:r=0.50;U_C:r=0.10;U_D:r=0.40;U_E:r=0.02;U_F:r=0.3
+//  uncharted_white:r=2.5;U_A:r=0.20;U_B:r=0.50;U_C:r=0.10;U_D:r=0.30;U_E:r=0.02;U_F:r=0.3
+//default
+//  uncharted_white:r=2.0;U_A:r=0.15;U_B:r=0.50;U_C:r=0.10;U_D:r=0.20;U_E:r=0.02;U_F:r=0.30
+    
+//  Vasya tonemapping
+//  uncharted_white:r=2.0;U_A:r=0.20;U_B:r=0.25;U_C:r=0.15;U_D:r=0.20;U_E:r=0.04;U_F:r=0.30
+//parameters like in tonemap demo
+    
+  rendinst_face_normal_mul:r = 0
+  rendinst_ao_to_sun:r = 0.1
+  rendinst_ao_to_sky:r = 0.5
+
+  postfx{
+    postfx_vignette_width:r=1
+    postfx_vignette_height:r=0.7
+    postfx_vignette_overlay:r=0.15
+    postfx_vignette_multiplier:r=0.05
+  }
+
+  default_weather{
+    max_river_width:r=250
+    water_color_noise_size:r=737
+    ocean_density:r=1
+    river_density:r=6
+
+    ocean0:p4=0.27,0.68,0.53,0
+    ocean1:p4=0.57,0.91,0.84,0
+
+    river0:p4=0.30,0.25,0.02,0
+    river1:p4=0.56,0.54,0.28,0
+  }
+}
+land_translucency:t=grassy
+windDir:p2 = 0.6, 0.8

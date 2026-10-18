@@ -7,6 +7,7 @@ const { runTool, openSceneInDaEditor, openProjectDaViewer } = dagorTools;
 const { BuildManager, BUILD_COMPONENTS } = require('./buildManager');
 const { ProjectWebviewProvider } = require('./projectWebview');
 const { createProjectActions } = require('./projectActions');
+const { createProject, findDagorEngineRoots } = require('./projectGenerator');
 const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 
 function activate(context) {
@@ -86,8 +87,61 @@ function activate(context) {
       if (project) await action(project);
     }));
   }
-  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.generateProject', project => {
-    vscode.window.showInformationMessage(`Project generation for ${project?.label || 'Dagor'} is not implemented yet.`);
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.generateProject', async () => {
+    const configuration = vscode.workspace.getConfiguration('dagorProjectManager');
+    const configuredToolsDirectory = configuration.get('toolsDirectory') || process.env.DAGOR_CDK_DIR;
+    const workspaceRoots = (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
+    const engineRoots = findDagorEngineRoots(workspaceRoots, configuredToolsDirectory);
+    if (engineRoots.length === 0) {
+      vscode.window.showErrorMessage('Cannot find DagorEngine. Open a folder inside DagorEngine or set dagorProjectManager.toolsDirectory.');
+      return;
+    }
+
+    let engineRoot = engineRoots[0];
+    if (engineRoots.length > 1) {
+      const selectedRoot = await vscode.window.showQuickPick(engineRoots.map(root => ({
+        label: path.basename(root),
+        description: root,
+        root
+      })), { placeHolder: 'Select the DagorEngine folder for the new project' });
+      if (!selectedRoot) return;
+      engineRoot = selectedRoot.root;
+    }
+
+    const projectName = await vscode.window.showInputBox({
+      prompt: 'Enter a name for the new Dagor project',
+      placeHolder: 'MyProject',
+      validateInput: value => /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(value)
+        ? undefined
+        : 'Use a letter or number first, then only letters, numbers, underscores, or hyphens.'
+    });
+    if (projectName === undefined) return;
+
+    try {
+      const result = createProject({
+        projectName,
+        engineRoot,
+        templateRoot: path.join(context.extensionPath, 'templates', 'starter-project')
+      });
+      const projects = await catalog.refresh();
+      const generatedProject = projects.find(project =>
+        path.resolve(project.root) === path.resolve(result.projectRoot)
+      ) || {
+        root: result.projectRoot,
+        applicationFile: result.applicationFile,
+        label: projectName
+      };
+      buildManager.start(generatedProject, ['editor_shaders', 'assets'], running => {
+        if (provider.view) provider.view.webview.postMessage({
+          type: 'buildState',
+          project: generatedProject.applicationFile,
+          running
+        });
+      });
+      vscode.window.showInformationMessage(`Dagor project created; editor shader and asset builds started: ${result.projectRoot}`);
+    } catch (error) {
+      vscode.window.showErrorMessage(error.message);
+    }
   }));
 
   const watcher = vscode.workspace.createFileSystemWatcher('**/*.level.blk');

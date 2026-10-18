@@ -1,0 +1,10 @@
+rainX7{
+  alphaFadeSpeedBegin:r = 100
+  alphaFadeSpeedEnd:r = 300
+  length:r = 0.65
+  speed:r = 8.5
+  width:r = 0.03
+  density:r = 2
+  wind:r = 1
+  alpha:r = 0.1
+}

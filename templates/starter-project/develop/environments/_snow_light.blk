@@ -1,0 +1,18 @@
+  "@override:rainX7"{
+    "@override:alphaFadeSpeedBegin":r = 50
+    "@override:alphaFadeSpeedEnd":r = 150
+    "@override:length":r = 0.001
+    "@override:speed":r = 1.5
+    "@override:width":r = 0.025
+    "@override:density":r = 4
+    "@override:wind":r = 2
+    "@override:alpha":r = 1
+    "@delete:lighting":p3=1,1,1
+    lighting:p3 = 5, 4, 2
+  }
+  "@delete:rainSound":t=""
+
+  "@override:rain"{
+    rainFromInvisibleClouds:b = 0
+    "@override:probability":r = 0.7
+  }

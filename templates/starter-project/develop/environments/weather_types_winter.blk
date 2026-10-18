@@ -1,0 +1,54 @@
+/* in code:"clear","good","hazy","cloudy","shower","poor","blind","rain","thunder"*/
+include weather_types.blk
+
+"@override:clear"{
+ include _snow_light.blk
+ "@override:rainX7"{
+    "@override:width":r = 0.015
+    "@override:density":r = 1
+  }
+  adaptationMultiplierMul:r=1.33
+}
+"@override:good"{
+ include _snow_light.blk
+ "@override:rainX7"{
+    "@override:width":r = 0.02
+    "@override:density":r = 2
+  }
+  adaptationMultiplierMul:r=1.33
+}
+"@override:hazy"{
+ include _snow_light.blk
+ "@override:rainX7"{
+    "@override:width":r = 0.02
+    "@override:density":r = 2
+  }
+  adaptationMultiplierMul:r=1.33
+}
+"@override:cloudy"{
+ include _snow_light.blk
+ "@override:rainX7"{
+    "@override:width":r = 0.02
+    "@override:density":r = 2
+  }
+  adaptationMultiplierMul:r=1.33
+}
+"@override:poor"{
+  include _snow_shower.blk
+  adaptationMultiplierMul:r=1.33
+}
+"@override:blind"{
+  include _snow_shower.blk
+  adaptationMultiplierMul:r=1.33
+}
+"@override:rain"{
+  include _snow_shower.blk
+  adaptationMultiplierMul:r=1.33
+}
+"@override:storm"{
+  include _snow_shower.blk
+}
+"@override:thunder"{
+  include _snow_shower.blk
+  adaptationMultiplierMul:r=1.33
+}

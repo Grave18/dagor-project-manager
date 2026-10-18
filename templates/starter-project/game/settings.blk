@@ -1,0 +1,33 @@
+texStreaming{}
+
+launchCnt:i=1
+incorrectExitWarning:b=no
+launchCorrectExit:b=yes
+licenseAccepted:b=yes
+
+graphics{
+  preset:t="high"
+  volumeFogQuality:t="medium"
+  fftWaterQuality:t="ultra"
+  sharpening:r=0
+  skiesQuality:t="high"
+  waterQuality:t="medium"
+  cloudsQuality:t="highres"
+  rendinstTesselation:b=no
+  screenSpaceWeatherEffects:b=yes
+  fxTarget:t="medres"
+  giAlgorithmQuality:r=0.5
+  giAlgorithm:t="high"
+  scopeImageQuality:i=2
+  HQProbeReflections:b=yes
+  texquality:t="high"
+  anisotropy:i=8
+  ssrQuality:t="medium"
+  effectsShadows:b=yes
+  HQVolfog:b=no
+  ssssQuality:t="high"
+  groundDisplacementQuality:i=1
+  shadowsQuality:t="medium"
+  HQVolumetricClouds:b=no
+  groundDeformations:t="high"
+}

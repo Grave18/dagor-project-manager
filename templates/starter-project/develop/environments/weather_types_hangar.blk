@@ -1,0 +1,11 @@
+/* in code:"clear","good","hazy","cloudy","shower","poor","blind","rain","thunder"*/
+
+clear{
+  include "_hangar.blk"
+}
+good{
+  include "_hangar.blk"
+}
+cloudy{
+  include "_hangar.blk"
+}

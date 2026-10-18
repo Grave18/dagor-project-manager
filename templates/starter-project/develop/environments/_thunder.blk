@@ -1,0 +1,74 @@
+scatteringEffect:p2 = 2,2.5
+
+sky{
+  mie_height:p2=2.7, 5.0
+  mieG:p2=0.12, 0.3
+  betaMScale:p2=9, 12
+  clouds_overcast:p2=1.0, 1.0
+}
+
+clouds_gen{
+  humidity:p2=0.98, 1.0
+  persistence:p2=0.55, 0.9
+  asymmetry:p2=0.12, 0.2
+}
+
+clouds_position{
+  start_altitude:p2=1.2, 2.5
+  thickness:p2=6.0, 9.5
+  light_extinction:p2=1.55, 2.2
+  amb_extinction_mul:p2=1.9, 2.0
+}
+
+clouds_render{
+  silver_lining:p2=0.5, 0.9
+  sun_light:p2=0.25, 0.55
+  ambient:p2=0.3, 0.8
+  silver_lining_eccentricity:p2=0.5, 0.8
+}
+
+strata_clouds{
+  amount:p2=0.9, 1.0
+  altitude:p2=9, 11.9
+}
+
+weatherScaleSearchLight:r=0.2
+cloudDropletsScale:r = 0.5
+cloud_shadow_intensity:r=1.0
+
+rain{probability:r=1;}
+rainSplashEnabled:b = yes
+adaptationMultiplierMul:r = 0.7
+
+rainX7{
+  alphaFadeSpeedBegin:r = 140
+  alphaFadeSpeedEnd:r = 400
+  length:r = 0.75
+  speed:r = 8.5
+  width:r = 0.025
+  density:r = 3
+  wind:r = 20
+  alpha:r = 0.25
+}
+
+windParams{
+  defaultWindSpeed:r = 0.1
+  height0:r = 300
+  turbulence0:r = 4.0
+  windMul0:r = 1
+  height1:r = 2000
+  turbulence1:r = 4.0
+  windMul1:r = 1
+  height2:r = 8000
+  turbulence2:r = 0.5
+  windMul2:r = 0.01
+  // wind spead multiplier affect on speed from previous height
+  // so windSpeed(5000) = windSpeed(2000) * windMul2 = (windSpeed(1000) * windMul1) * windMul2 = 
+  // ((windSpeed(0) * windMul0) * windMul1) * windMul2
+}
+wind_strength:r = 6
+
+dustMul:r = 0
+mudMul:r = 2
+
+include "_generic_common.blk"
