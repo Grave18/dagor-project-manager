@@ -112,6 +112,11 @@
         "category": "Dagor Project Manager"
       },
       {
+        "command": "dagorProjectManager.deleteContextProject",
+        "title": "Delete Project",
+        "category": "Dagor Project Manager"
+      },
+      {
         "command": "dagorProjectManager.folderBuildAll",
         "title": "Build All"
       },
@@ -207,6 +212,11 @@
           "command": "dagorProjectManager.copyContextTargetFullname",
           "when": "webviewId == 'dagorProjectManager.projects' && (webviewSection == 'project' || webviewSection == 'resource' || webviewSection == 'scene')",
           "group": "9_copy@2"
+        },
+        {
+          "command": "dagorProjectManager.deleteContextProject",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'project'",
+          "group": "z_delete"
         }
       ],
       "commandPalette": [
@@ -252,6 +262,10 @@
         },
         {
           "command": "dagorProjectManager.copyContextTargetFullname",
+          "when": "false"
+        },
+        {
+          "command": "dagorProjectManager.deleteContextProject",
           "when": "false"
         }
       ],

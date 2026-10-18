@@ -244,6 +244,47 @@ class ProjectWebviewProvider {
     await vscode.env.clipboard.writeText(targetPath);
   }
 
+  async deleteContextProject() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'project' || !target.project) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    if (!project) return;
+
+    const confirmation = await vscode.window.showWarningMessage(
+      `Delete Dagor project "${project.label}"?`,
+      {
+        modal: true,
+        detail: `The entire project folder will be moved to the system trash:\n${project.root}`
+      },
+      'Delete Project',
+      'Cancel'
+    );
+    if (confirmation !== 'Delete Project') return;
+
+    try {
+      await vscode.workspace.fs.delete(vscode.Uri.file(project.root), { recursive: true, useTrash: true });
+      await this.catalog.refresh();
+    } catch (error) {
+      const confirmation = await vscode.window.showWarningMessage(
+        `Project "${project.label}" could not be moved to the system trash.`,
+        {
+          modal: true,
+          detail: `${error.message}\nPermanently deleting this project cannot be undone.\n${project.root}`
+        },
+        'Permanently Delete',
+        'Cancel'
+      );
+      if (confirmation !== 'Permanently Delete') return;
+
+      try {
+        await vscode.workspace.fs.delete(vscode.Uri.file(project.root), { recursive: true });
+        await this.catalog.refresh();
+      } catch (deleteError) {
+        vscode.window.showErrorMessage(`Failed to permanently delete Dagor project ${project.label}: ${deleteError.message}`);
+      }
+    }
+  }
+
   async runContextSceneInGame() {
     const target = this.takeContextTarget();
     if (target.kind !== 'scene' || !target.project || !target.path) return;

@@ -47,6 +47,8 @@ function activate(context) {
     provider.copyContextTargetName()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.copyContextTargetFullname', () =>
     provider.copyContextTargetFullname()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.deleteContextProject', () =>
+    provider.deleteContextProject()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.runSceneInGame', () =>
     provider.runContextSceneInGame()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildAllFromContext', () =>

@@ -17,6 +17,7 @@ const messages = [];
 const launches = [];
 const providers = new Map();
 const contextKeys = new Map();
+const deleteRequests = [];
 const roots = [];
 const watcherPatterns = [];
 const quickPicks = [];
@@ -30,6 +31,10 @@ let webviewView;
 let fakeTerminal;
 let quickPickSelection;
 let inputBoxValue = 'NewDemo';
+let modalChoice;
+let warningPrompts = [];
+const warningResponses = [];
+let deleteTrashError;
 const terminals = [];
 
 class FakeEventEmitter {
@@ -73,6 +78,18 @@ const vscode = {
   },
   workspace: {
     workspaceFolders: roots,
+    fs: {
+      async delete(uri, options) {
+        deleteRequests.push({ uri, options });
+        if (options.useTrash && deleteTrashError) {
+          const error = deleteTrashError;
+          deleteTrashError = undefined;
+          throw error;
+        }
+        applicationFiles = applicationFiles.filter(file => !file.startsWith(`${uri.fsPath}${path.sep}`));
+        sceneFiles = sceneFiles.filter(file => !file.startsWith(`${uri.fsPath}${path.sep}`));
+      }
+    },
     getWorkspaceFolder() { return { uri: { fsPath: workspaceRoot } }; },
     getConfiguration() {
       return { get: key => ({
@@ -105,6 +122,10 @@ const vscode = {
   window: {
     showErrorMessage(message) { errors.push(message); },
     showInformationMessage(message) { messages.push(message); },
+    showWarningMessage(message, options, ...items) {
+      warningPrompts.push({ message, options, items });
+      return Promise.resolve(warningResponses.shift() ?? modalChoice);
+    },
     showQuickPick(items, options) {
       quickPicks.push({ items, options });
       return Promise.resolve(items.find(item => item.label === quickPickSelection) || items[0]);
@@ -239,6 +260,11 @@ afterEach(() => {
   fakeTerminal = undefined;
   terminals.length = 0;
   quickPicks.length = 0;
+  deleteRequests.length = 0;
+  warningPrompts = [];
+  modalChoice = undefined;
+  warningResponses.length = 0;
+  deleteTrashError = undefined;
   executedCommands.length = 0;
   quickPickSelection = undefined;
   inputBoxValue = 'NewDemo';
@@ -284,6 +310,7 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.revealContextTargetInOS',
     'dagorProjectManager.copyContextTargetName',
     'dagorProjectManager.copyContextTargetFullname',
+    'dagorProjectManager.deleteContextProject',
     'dagorProjectManager.runSceneInGame',
     'dagorProjectManager.buildAllFromContext',
     'dagorProjectManager.buildCodeFromContext',
@@ -320,6 +347,87 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
       'dagorProjectManager.folderRunCommand'
     ]
   );
+  const deleteMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
+    item.command === 'dagorProjectManager.deleteContextProject'
+  );
+  assert.equal(deleteMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'project'");
+  assert.match(deleteMenuItem.group, /^z_/);
+});
+
+test('confirms project deletion and moves its folder to the system trash', async () => {
+  await refreshCatalog();
+  const originalApplications = [...applicationFiles];
+  const originalScenes = [...sceneFiles];
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'project', project: applicationFile });
+  modalChoice = 'Delete Project';
+
+  await commands.get('dagorProjectManager.deleteContextProject')();
+
+  assert.equal(warningPrompts.length, 1);
+  assert.equal(warningPrompts[0].options.modal, true);
+  assert.match(warningPrompts[0].message, /project_stalker/);
+  assert.deepEqual(warningPrompts[0].items, ['Delete Project', 'Cancel']);
+  assert.equal(deleteRequests.length, 1);
+  assert.equal(deleteRequests[0].uri.fsPath, workspaceRoot);
+  assert.deepEqual(deleteRequests[0].options, { recursive: true, useTrash: true });
+  assert.ok(!provider.catalog.projects.some(project => project.root === workspaceRoot));
+  applicationFiles.splice(0, applicationFiles.length, ...originalApplications);
+  sceneFiles.splice(0, sceneFiles.length, ...originalScenes);
+  await refreshCatalog();
+});
+
+test('does not delete a project when the confirmation is cancelled', async () => {
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'project', project: applicationFile });
+  modalChoice = 'Cancel';
+
+  await commands.get('dagorProjectManager.deleteContextProject')();
+
+  assert.equal(warningPrompts.length, 1);
+  assert.equal(deleteRequests.length, 0);
+  assert.ok(provider.catalog.projects.some(project => project.root === workspaceRoot));
+});
+
+test('asks separately before permanently deleting when moving the project to trash fails', async () => {
+  await refreshCatalog();
+  const originalApplications = [...applicationFiles];
+  const originalScenes = [...sceneFiles];
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'project', project: applicationFile });
+  warningResponses.push('Delete Project', 'Permanently Delete');
+  deleteTrashError = new Error('Failed to move to the recycle bin (Operation was aborted)');
+
+  await commands.get('dagorProjectManager.deleteContextProject')();
+
+  assert.equal(warningPrompts.length, 2);
+  assert.equal(warningPrompts[1].options.modal, true);
+  assert.match(warningPrompts[1].message, /could not be moved to the system trash/i);
+  assert.match(warningPrompts[1].options.detail, /cannot be undone/i);
+  assert.deepEqual(warningPrompts[1].items, ['Permanently Delete', 'Cancel']);
+  assert.deepEqual(deleteRequests.map(request => request.options), [
+    { recursive: true, useTrash: true },
+    { recursive: true }
+  ]);
+  assert.ok(!provider.catalog.projects.some(project => project.root === workspaceRoot));
+  applicationFiles.splice(0, applicationFiles.length, ...originalApplications);
+  sceneFiles.splice(0, sceneFiles.length, ...originalScenes);
+  await refreshCatalog();
+});
+
+test('leaves the project intact when permanent deletion fallback is cancelled', async () => {
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'project', project: applicationFile });
+  warningResponses.push('Delete Project', 'Cancel');
+  deleteTrashError = new Error('Failed to move to the recycle bin (Operation was aborted)');
+
+  await commands.get('dagorProjectManager.deleteContextProject')();
+
+  assert.equal(warningPrompts.length, 2);
+  assert.equal(deleteRequests.length, 1);
+  assert.ok(provider.catalog.projects.some(project => project.root === workspaceRoot));
 });
 
 test('places Add Project below the project list, routes it, and refreshes after creation', async () => {
