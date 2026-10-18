@@ -6,6 +6,7 @@ const { BUILD_COMPONENTS } = require('./buildManager');
 const ICON_PATHS = {
   chevron: '<path d="m9 18 6-6-6-6"/>',
   folder: '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H10l2 2h7.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/>',
+  folderPlus: '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H10l2 2h7.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="18" cy="17" r="4" fill="var(--vscode-sideBar-background, var(--vscode-editor-background))"/><path d="M18 15v4m-2-2h4"/>',
   refresh: '<path d="M3 2v6h6M21 22v-6h-6M21 12a9 9 0 0 0-15-6.7L3 8m0 4a9 9 0 0 0 15 6.7L21 16"/>',
   build: '<path d="m14 6 4-4 4 4-4 4M18 2l-7 7m1 1 4 4-8 8a2.1 2.1 0 0 1-3-3z"/>',
   external: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M10 14 20 4m-7 0h7v7"/>',
@@ -384,8 +385,8 @@ class ProjectWebviewProvider {
         .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
         @media(prefers-reduced-motion:reduce){.chevron-icon.animate-expand,.chevron-icon.animate-collapse,.end-chevron{animation:none!important;transition:none!important}}
         @media(max-width:560px){.action-grid{grid-template-columns:1fr}.components{grid-column:1;grid-row:auto}.project-row small,.scene small{display:none}}
-        .add-project-row{display:flex;justify-content:flex-start;margin:3px 0 8px}.add-project-button{padding:2px 8px;color:var(--vscode-textLink-foreground);background:transparent;border:1px solid transparent;border-radius:4px;font:inherit;cursor:pointer}.add-project-button:hover{color:var(--vscode-textLink-activeForeground);background:var(--vscode-list-hoverBackground)}.add-project-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
-      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button">Add Project</button></div>${projectActions}</main>
+        .add-project-row{display:flex;justify-content:flex-start;margin:8px 0 8px;padding-top:6px;border-top:1px solid var(--vscode-widget-border)}.add-project-button{width:100%;display:flex;align-items:center;gap:7px;min-height:25px;padding:3px 6px;text-align:left;color:var(--vscode-foreground);background:transparent;border:0;border-radius:4px;font:inherit;cursor:pointer}.add-project-button:hover{background:var(--vscode-list-hoverBackground)}.add-project-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}.add-project-button:disabled{opacity:0.5;cursor:not-allowed;filter:brightness(0.8)}.add-project-button:disabled:hover{background:transparent}.add-project-spacer{visibility:hidden}.add-project-label{font-weight:600}
+      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${this.catalog.isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${this.catalog.isRefreshing ? 'disabled' : ''}><span class="chevron-icon add-project-spacer" aria-hidden="true">${iconSvg('chevron')}</span><span class="project-icon">${iconSvg('folderPlus')}</span><span class="add-project-label">Create Project</span></button></div>${projectActions}</main>
       <script nonce="${nonce}">
         const vscode=acquireVsCodeApi();
         const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -437,7 +438,7 @@ class ProjectWebviewProvider {
   if(document.getElementById('refresh').disabled)return;
   vscode.postMessage({type:'refresh'});
 });
-document.getElementById('add-project').addEventListener('click',()=>vscode.postMessage({type:'addProject'}));
+document.getElementById('add-project').addEventListener('click',()=>{const button=document.getElementById('add-project');if(button.disabled)return;vscode.postMessage({type:'addProject'});});
 const blockButtonsFor2s=()=>{
   const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command]');
   buttons.forEach(btn=>btn.disabled=true);

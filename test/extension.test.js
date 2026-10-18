@@ -430,10 +430,10 @@ test('leaves the project intact when permanent deletion fallback is cancelled', 
   assert.ok(provider.catalog.projects.some(project => project.root === workspaceRoot));
 });
 
-test('places Add Project below the project list, routes it, and refreshes after creation', async () => {
+test('places Create Project below the project list, routes it, and refreshes after creation', async () => {
   await refreshCatalog();
   const html = webviewView.webview.html;
-  assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project"[^>]*>Add Project<\/button><\/div>/);
+  assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button"><span class="chevron-icon add-project-spacer" aria-hidden="true"><svg class="icon"[\s\S]*?<\/svg><\/span><span class="project-icon"><svg class="icon"[\s\S]*?<circle cx="18" cy="17" r="4" fill="var\(--vscode-sideBar-background, var\(--vscode-editor-background\)\)"\/><path d="M18 15v4m-2-2h4"\/><\/svg><\/span><span class="add-project-label">Create Project<\/span><\/button><\/div>/);
   assert.match(html, /getElementById\('add-project'\)\.addEventListener\('click'/);
 
   fs.writeFileSync(path.join(tempDirectory, 'build_all.py'), '# engine marker');
