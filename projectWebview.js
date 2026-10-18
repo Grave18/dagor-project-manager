@@ -44,10 +44,12 @@ function getProjectDisplayPath(project) {
 }
 
 class ProjectWebviewProvider {
-  constructor({ catalog, buildManager, actions }) {
+  constructor({ catalog, buildManager, actions, sceneActions, outputChannel }) {
     this.catalog = catalog;
     this.buildManager = buildManager;
     this.actions = actions;
+    this.sceneActions = sceneActions;
+    this.outputChannel = outputChannel;
     this.view = undefined;
     this.selectedProject = undefined;
     this.contextTargetPath = undefined;
@@ -330,6 +332,139 @@ class ProjectWebviewProvider {
         await this.catalog.refresh();
       } catch (deleteError) {
         vscode.window.showErrorMessage(`Failed to permanently delete command ${command.label}: ${deleteError.message}`);
+      }
+    }
+  }
+
+  async deleteContextScene() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'scene' || !target.project || !target.path) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    const scene = project?.scenes.find(item => path.resolve(item.uri.fsPath) === path.resolve(target.path));
+    if (!project || !scene) return;
+
+    let details;
+    try {
+      details = await this.sceneActions.inspectDeletion(project, scene.uri.fsPath);
+    } catch (error) {
+      this.outputChannel?.show(true);
+      this.outputChannel?.appendLine(`[DAGOR_PM] Could not inspect scene ${scene.label}: ${error.message}`);
+      vscode.window.showErrorMessage(`Could not inspect scene ${scene.label}: ${error.message}`);
+      return;
+    }
+
+    if (!details.canDelete) {
+      this.outputChannel?.show(true);
+      this.outputChannel?.appendLine(`[DAGOR_PM] Refused to delete scene ${scene.label}.`);
+      this.outputChannel?.appendLine(`[DAGOR_PM] ${details.reason}`);
+      vscode.window.showWarningMessage(`Cannot safely delete scene "${scene.label}".`, { modal: true, detail: details.reason }, 'OK');
+      return;
+    }
+
+    const listedReferences = details.references.slice(0, 10);
+    const referenceLines = details.references.length > 0
+      ? `${listedReferences.map(reference => `${reference.file}:${reference.line}`).join('\n')}${details.references.length > listedReferences.length ? `\n…and ${details.references.length - listedReferences.length} more; see Output.` : ''}`
+      : details.referenceScanError
+        ? `Reference scan failed: ${details.referenceScanError}`
+        : 'No static references found.';
+    const confirmationDetail = [
+      `Scene folder (to system trash):\n${details.sceneDirectory}`,
+      details.exportTargets.length > 0
+        ? `Export files (to system trash):\n${details.exportTargets.join('\n')}${details.exportWarning ? `\nAttention: ${details.exportWarning}` : ''}`
+        : `Export files: none found${details.exportWarning ? ` (${details.exportWarning})` : ''}`,
+      `References (will be left unchanged):\n${referenceLines}`,
+      'Static scanning may not detect references assembled or loaded by code.',
+      'Assets will not be deleted.'
+    ].join('\n\n');
+    const output = this.outputChannel;
+    output?.appendLine('');
+    output?.appendLine(`[DAGOR_PM] Scene deletion inspection: ${scene.label} in ${project.label}.`);
+    output?.appendLine(`[DAGOR_PM] Scene folder: ${details.sceneDirectory}`);
+    if (details.exportTargets.length > 0) {
+      for (const exportPath of details.exportTargets) output?.appendLine(`[DAGOR_PM] Export target: ${exportPath}`);
+    }
+    if (details.exportWarning || details.exportTargets.length === 0) {
+      output?.appendLine(`[DAGOR_PM] Attention: ${details.exportWarning || 'No export files were identified.'}`);
+    }
+    if (details.referenceScanError) {
+      output?.appendLine(`[DAGOR_PM] Attention: static reference scan failed: ${details.referenceScanError}`);
+    } else if (details.references.length > 0) {
+      output?.appendLine('[DAGOR_PM] Attention: these references were found and will not be changed:');
+      for (const reference of details.references) {
+        output?.appendLine(`  ${reference.file}:${reference.line}: ${reference.text}`);
+      }
+    } else {
+      output?.appendLine('[DAGOR_PM] No direct textual references were found. Dynamic references may not be detected.');
+    }
+    output?.appendLine('[DAGOR_PM] Assets are not part of scene deletion and will be left untouched.');
+    if (details.references.length > listedReferences.length || details.referenceScanError) output?.show(true);
+    const confirmation = await vscode.window.showWarningMessage(
+      `Delete scene "${scene.label}"?`,
+      { modal: true, detail: confirmationDetail },
+      'Delete Scene',
+      'Cancel'
+    );
+    if (confirmation !== 'Delete Scene') return;
+
+    output?.show(true);
+    output?.appendLine(`[DAGOR_PM] User confirmed deletion of scene ${scene.label}.`);
+
+    const deletedPaths = [];
+    let failedTargets = [];
+    for (const targetPath of details.targets) {
+      try {
+        await vscode.workspace.fs.delete(vscode.Uri.file(targetPath), { recursive: true, useTrash: true });
+        deletedPaths.push(targetPath);
+        output?.appendLine(`[DAGOR_PM] Moved to system trash: ${targetPath}`);
+      } catch (error) {
+        failedTargets.push({ path: targetPath, message: error.message });
+        output?.appendLine(`[DAGOR_PM] Failed to move to system trash: ${targetPath} (${error.message})`);
+      }
+    }
+
+    if (failedTargets.length > 0) {
+      const fallbackChoice = await vscode.window.showWarningMessage(
+        `Some files for scene "${scene.label}" could not be moved to the system trash.`,
+        {
+          modal: true,
+          detail: `Permanently deleting these paths cannot be undone:\n${failedTargets.map(item => `${item.path}\n${item.message}`).join('\n')}`
+        },
+        'Permanently Delete',
+        'Cancel'
+      );
+      if (fallbackChoice === 'Permanently Delete') {
+        const retryTargets = failedTargets;
+        failedTargets = [];
+        for (const item of retryTargets) {
+          try {
+            await vscode.workspace.fs.delete(vscode.Uri.file(item.path), { recursive: true });
+            deletedPaths.push(item.path);
+            output?.appendLine(`[DAGOR_PM] Permanently deleted: ${item.path}`);
+          } catch (error) {
+            failedTargets.push({ path: item.path, message: error.message });
+            output?.appendLine(`[DAGOR_PM] Permanent deletion failed: ${item.path} (${error.message})`);
+          }
+        }
+      } else {
+        output?.appendLine('[DAGOR_PM] Permanent deletion was cancelled; failed paths were left in place.');
+      }
+    }
+
+    const sourceFolderDeleted = deletedPaths.includes(details.sceneDirectory);
+    if (sourceFolderDeleted) {
+      try {
+        await this.catalog.refresh();
+      } catch (error) {
+        output?.appendLine(`[DAGOR_PM] Attention: scene was deleted, but the project list could not be refreshed: ${error.message}`);
+      }
+    }
+    if (failedTargets.length > 0) {
+      output?.appendLine(`[DAGOR_PM] Scene deletion partially completed: ${failedTargets.length} path(s) remain.`);
+      vscode.window.showWarningMessage(`Scene "${scene.label}" was only partially deleted. See the Dagor Project Manager output.`);
+    } else {
+      output?.appendLine(`[DAGOR_PM] Scene deletion finished. ${deletedPaths.length} path(s) removed.`);
+      if (!sourceFolderDeleted) {
+        vscode.window.showErrorMessage(`Scene folder ${details.sceneDirectory} was not deleted. See the Dagor Project Manager output.`);
       }
     }
   }

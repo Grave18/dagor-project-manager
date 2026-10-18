@@ -7,6 +7,7 @@ const { runTool, openSceneInDaEditor, openProjectDaViewer } = dagorTools;
 const { BuildManager, BUILD_COMPONENTS } = require('./buildManager');
 const { ProjectWebviewProvider } = require('./projectWebview');
 const { createProjectActions } = require('./projectActions');
+const { createSceneActions } = require('./sceneActions');
 const { createProject, findDagorEngineRoots } = require('./projectGenerator');
 const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 
@@ -28,6 +29,7 @@ function activate(context) {
   });
   catalog = new ProjectCatalog({ ensureExecutableWatcher: () => buildManager.ensureExecutableWatcher() });
   const actions = createProjectActions({ vscodeApi: vscode, catalog, toolRunner: dagorTools, buildManager });
+  const sceneActions = createSceneActions({ vscodeApi: vscode });
   context.subscriptions.push(catalog.onDidChange.event(projects => {
     const projectFolders = Object.fromEntries(
       projects.map(project => [vscode.Uri.file(path.resolve(project.root)).toString(), true])
@@ -37,7 +39,9 @@ function activate(context) {
         vscode.window.showErrorMessage(`Failed to update Dagor project folder menu: ${error.message}`);
       });
   }));
-  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions });
+  const outputChannel = vscode.window.createOutputChannel('Dagor Project Manager');
+  context.subscriptions.push(outputChannel);
+  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneActions, outputChannel });
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTarget', () =>
     provider.revealContextTarget()));
@@ -51,6 +55,8 @@ function activate(context) {
     provider.deleteContextProject()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.deleteContextCommand', () =>
     provider.deleteContextCommand()));
+  context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.deleteContextScene', () =>
+    provider.deleteContextScene()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.runSceneInGame', () =>
     provider.runContextSceneInGame()));
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.buildAllFromContext', () =>

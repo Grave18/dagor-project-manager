@@ -325,6 +325,7 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.copyContextTargetFullname',
     'dagorProjectManager.deleteContextProject',
     'dagorProjectManager.deleteContextCommand',
+    'dagorProjectManager.deleteContextScene',
     'dagorProjectManager.runSceneInGame',
     'dagorProjectManager.buildAllFromContext',
     'dagorProjectManager.buildCodeFromContext',
