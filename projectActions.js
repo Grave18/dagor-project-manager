@@ -9,6 +9,27 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
   }
 
+  async function getSceneExportDirectory(project) {
+    for (const scene of project.scenes || []) {
+      try {
+        const contents = await fs.readFile(scene.uri.fsPath, 'utf8');
+        const uncommented = contents.replace(/\/\*[\s\S]*?\*\//g, '');
+        const exportPath = uncommented.match(/^\s*exportPath\s*:\s*t\s*=\s*"([^"]+)"/im)?.[1];
+        if (!exportPath) continue;
+
+        const normalized = exportPath.replace(/\\/g, '/');
+        if (/^(?:[a-z]:|\/|\\\\)/i.test(normalized)) continue;
+        const safePath = path.posix.normalize(normalized);
+        if (safePath === '..' || safePath.startsWith('../')) continue;
+        const directory = path.posix.dirname(safePath);
+        return directory === '.' ? '' : `${directory}/`;
+      } catch {
+        // Try another scene if this one cannot be read.
+      }
+    }
+    return undefined;
+  }
+
   async function findProjectForFolder(folderUri) {
     if (!folderUri || folderUri.scheme !== 'file') {
       vscode.window.showErrorMessage('Select a local Dagor project folder in the VS Code Explorer.');
@@ -246,6 +267,115 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     }
   }
 
+  async function createProjectScene(project) {
+    const name = await vscode.window.showInputBox({
+      prompt: `Enter a name for a scene in ${project.label}`,
+      placeHolder: 'my-scene',
+      validateInput: value => /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(value.trim())
+        ? undefined
+        : 'Use letters, numbers, underscores, or hyphens; the name must start with a letter or number.'
+    });
+    if (name === undefined) return;
+
+    const sceneType = await vscode.window.showQuickPick([
+      { label: 'Empty Scene', description: 'Create the level structure without objects.', value: 'empty' },
+      { label: 'From Template', description: 'Create a scene with a plane and a cube.', value: 'template' }
+    ], { placeHolder: `Choose a starting point for ${name.trim()}` });
+    if (!sceneType) return;
+
+    const sceneName = name.trim();
+    let projectRoot;
+    try {
+      projectRoot = await fs.realpath(project.root);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Cannot safely resolve the project folder: ${error.message}`);
+      return;
+    }
+    let levelsDirectory = projectRoot;
+    for (const segment of ['develop', 'levels']) {
+      levelsDirectory = path.join(levelsDirectory, segment);
+      try {
+        await fs.mkdir(levelsDirectory);
+      } catch (error) {
+        if (error.code !== 'EEXIST') {
+          vscode.window.showErrorMessage(`Failed to create scene folder: ${error.message}`);
+          return;
+        }
+      }
+      try {
+        const directoryInfo = await fs.lstat(levelsDirectory);
+        const realDirectory = await fs.realpath(levelsDirectory);
+        if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || !isPathWithin(projectRoot, realDirectory)) {
+          vscode.window.showErrorMessage(`Cannot create a scene because ${path.relative(projectRoot, levelsDirectory)} is not a regular folder inside the project.`);
+          return;
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Cannot safely inspect the scene folder: ${error.message}`);
+        return;
+      }
+    }
+
+    const sceneDirectory = path.join(levelsDirectory, sceneName);
+    const levelPath = path.join(sceneDirectory, `${sceneName}.level.blk`);
+    try {
+      await fs.mkdir(sceneDirectory);
+    } catch (error) {
+      const message = error.code === 'EEXIST'
+        ? `A scene folder already exists: ${sceneDirectory}`
+        : `Failed to create scene folder: ${error.message}`;
+      vscode.window.showErrorMessage(message);
+      return;
+    }
+
+    const templateDirectory = path.join(__dirname, 'templates', 'starter-project', 'develop', 'levels', '__PROJECT_NAME__');
+    const sceneExportDirectory = await getSceneExportDirectory(project);
+    const templateFiles = [
+      ['__PROJECT_NAME__.level.blk', `${sceneName}.level.blk`],
+      ['__PROJECT_NAME__.level.local.blk', `${sceneName}.level.local.blk`]
+    ];
+    if (sceneType.value === 'template') {
+      templateFiles.push(['heightmapLand/entities.blk', 'heightmapLand/entities.blk']);
+    } else {
+      templateFiles.push(['heightmapLand/entities.blk', 'heightmapLand/entities.blk', '']);
+    }
+
+    try {
+      for (const [sourceRelative, destinationRelative, emptyContent] of templateFiles) {
+        const destination = path.join(sceneDirectory, destinationRelative);
+        await fs.mkdir(path.dirname(destination), { recursive: true });
+        if (emptyContent !== undefined) {
+          await fs.writeFile(destination, emptyContent, { flag: 'wx' });
+        } else {
+          const source = path.join(templateDirectory, sourceRelative);
+          const sourceInfo = await fs.lstat(source);
+          if (!sourceInfo.isFile() || sourceInfo.isSymbolicLink()) {
+            throw new Error(`Scene template file is missing or invalid: ${sourceRelative}`);
+          }
+          let contents = (await fs.readFile(source, 'utf8')).split('__PROJECT_NAME__').join(sceneName);
+          if (path.basename(destination).endsWith('.level.blk') && sceneExportDirectory !== undefined) {
+            contents = contents.replace(
+              /^\s*exportPath\s*:\s*t\s*=\s*"[^"]+"/im,
+              `exportPath:t="${sceneExportDirectory}${sceneName}.bin"`
+            );
+          }
+          await fs.writeFile(destination, contents, { encoding: 'utf8', flag: 'wx' });
+        }
+      }
+    } catch (error) {
+      await fs.rm(sceneDirectory, { recursive: true, force: true }).catch(() => {});
+      vscode.window.showErrorMessage(`Failed to create scene: ${error.message}`);
+      return;
+    }
+
+    try {
+      await catalog.refresh();
+      const document = await vscode.workspace.openTextDocument(vscode.Uri.file(levelPath));
+      await vscode.window.showTextDocument(document);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Scene was created but could not be opened: ${error.message}`);
+    }
+  }
+
   return {
     findProjectForFolder,
     runProjectGame,
@@ -255,6 +385,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     pickProjectGame,
     pickProjectGameCommand,
     createProjectGameCommand,
+    createProjectScene,
     startBuild: (project, components, onBuildStateChange) => buildManager.start(project, components, onBuildStateChange),
     stopBuild: (project, onBuildStateChange) => buildManager.stop(project, onBuildStateChange),
     openProjectDaViewer: toolRunner.openProjectDaViewer,

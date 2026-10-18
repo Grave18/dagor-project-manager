@@ -79,5 +79,9 @@ Desktop.ini
 .DS_Store
 .idea/
 
+# --- daEditor local state ------------------------------------------------
+*.local.blk
+camera_presets.blk
+
 # --- kshema dahlia: compiled blk caches from daBuild --------------------
 *.blk.bin

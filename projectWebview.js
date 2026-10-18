@@ -168,6 +168,8 @@ class ProjectWebviewProvider {
       this.actions.runProjectGameCommand(project, message.command);
     } else if (message.type === 'createGameCommand') {
       if (project) await this.actions.createProjectGameCommand(project);
+    } else if (message.type === 'createScene') {
+      if (project) await this.actions.createProjectScene(project);
     } else if (message.type === 'stopBuild') {
       this.actions.stopBuild(project || projectData, running => {
         if (this.view) this.view.webview.postMessage({
@@ -552,7 +554,7 @@ class ProjectWebviewProvider {
               <div class="components ${running ? 'visible' : ''}"><div class="caption">Select components to build:</div>${buildItems}<button type="button" class="build-submit ${running ? 'running' : ''}" data-action="submitBuild" aria-label="${running ? 'Stop Build' : 'Build'}"><span class="build-icon">${iconSvg('play', 'build-start-icon')}${iconSvg('stop', 'build-stop-icon')}</span> <span class="build-label">${running ? 'Stop Build' : 'Build'}</span></button></div>
               <button type="button" class="action" data-action="viewer" data-vscode-context='{"preventDefaultContextMenuItems":true}'>${iconSvg('external')} <span>Open daViewer</span></button>
             </div>
-            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
+            <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}<button type="button" class="scene create-scene" data-create-scene data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Scene</span></button></div></div>
             <div class="scene-group game-group"><button type="button" class="action scene-heading" data-action="toggleGames" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="game-heading-icon">${iconSvg('play')}</span><span>Run Game</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-list">${games || '<div class="empty">Game executables should be located in game/ or one folder below</div>'}</div></div>
             <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" data-context-kind="commandGroup" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"command","preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">Command files should be located in game/</div>'}<button type="button" class="scene create-command" data-create-command data-context-project="${projectId}" data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Command</span></button></div></div>
           </div>
@@ -631,7 +633,7 @@ class ProjectWebviewProvider {
 });
 document.getElementById('add-project').addEventListener('click',()=>{const button=document.getElementById('add-project');if(button.disabled)return;vscode.postMessage({type:'addProject'});});
 const blockButtonsFor2s=()=>{
-  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command], .create-command');
+  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command], .create-command, .create-scene');
   buttons.forEach(btn=>btn.disabled=true);
   setTimeout(()=>buttons.forEach(btn=>btn.disabled=false),5000);
 };
@@ -641,6 +643,7 @@ const blockButtonsFor2s=()=>{
           const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
           const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
           const createCommand=event.target.closest('[data-create-command]');if(createCommand){if(createCommand.disabled)return;vscode.postMessage({type:'createGameCommand',project:projectFor(createCommand)});blockButtonsFor2s();return;}
+          const createScene=event.target.closest('[data-create-scene]');if(createScene){if(createScene.disabled)return;vscode.postMessage({type:'createScene',project:projectFor(createScene)});blockButtonsFor2s();return;}
           const button=event.target.closest('[data-action]');if(!button)return;
           if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
             const content=button.nextElementSibling;
