@@ -13,7 +13,8 @@ const ICON_PATHS = {
   scene: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
   play: '<path d="m8 5 11 7-11 7z"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
-  terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>'
+  terminal: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/>',
+  plus: '<path d="M12 5v14m-7-7h14"/>'
 };
 function iconSvg(name, className = '') {
   const classes = ['icon', className].filter(Boolean).join(' ');
@@ -163,6 +164,8 @@ class ProjectWebviewProvider {
       this.actions.runProjectGame(project, message.executable);
     } else if (message.type === 'runGameCommand') {
       this.actions.runProjectGameCommand(project, message.command);
+    } else if (message.type === 'createGameCommand') {
+      if (project) await this.actions.createProjectGameCommand(project);
     } else if (message.type === 'stopBuild') {
       this.actions.stopBuild(project || projectData, running => {
         if (this.view) this.view.webview.postMessage({
@@ -200,6 +203,9 @@ class ProjectWebviewProvider {
       const command = project.gameCommands.find(item => item.command === target.path);
       this.contextTargetPath = command?.command;
       this.contextTargetName = command?.label;
+    } else if (target.kind === 'commandGroup') {
+      this.contextTargetPath = path.join(project.root, 'game');
+      this.contextTargetName = project.label;
     }
     if (this.contextTargetPath) {
       this.contextTargetProject = project;
@@ -286,6 +292,14 @@ class ProjectWebviewProvider {
     }
   }
 
+  async createCommandFromContext() {
+    const target = this.takeContextTarget();
+    if (target.kind !== 'commandGroup' || !target.project) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    if (!project) return;
+    await this.actions.createProjectGameCommand(project);
+  }
+
   async runContextSceneInGame() {
     const target = this.takeContextTarget();
     if (target.kind !== 'scene' || !target.project || !target.path) return;
@@ -363,7 +377,7 @@ class ProjectWebviewProvider {
             </div>
             <div class="scene-group"><button type="button" class="action scene-heading" data-action="toggleScenes" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true">${iconSvg('scene')} <span>Open Scene</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="scene-list">${scenes || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
             <div class="scene-group game-group"><button type="button" class="action scene-heading" data-action="toggleGames" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="game-heading-icon">${iconSvg('play')}</span><span>Run Game</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-list">${games || '<div class="empty">Game executables should be located in game/ or one folder below</div>'}</div></div>
-            <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" data-vscode-context='{"preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">Scenes should be located in develop/levels</div>'}</div></div>
+            <div class="scene-group command-group"><button type="button" class="action scene-heading" data-action="toggleGameCommands" data-context-kind="commandGroup" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"command","preventDefaultContextMenuItems":true}' aria-expanded="true"><span class="command-icon">${iconSvg('terminal')}</span><span>Run Command</span><span class="end-chevron expanded">${iconSvg('chevron')}</span></button><div class="game-command-list">${gameCommands || '<div class="empty">Command files should be located in game/</div>'}<button type="button" class="scene create-command" data-create-command data-context-project="${projectId}" data-vscode-context='{"preventDefaultContextMenuItems":true}'><span class="command-icon" aria-hidden="true">${iconSvg('plus')}</span><span>Create Command</span></button></div></div>
           </div>
         </section>`;
       projectActions = projectActions.replace(
@@ -382,7 +396,7 @@ class ProjectWebviewProvider {
         .project-name{font-weight:600}.project-row small,.scene small{margin-left:auto;color:var(--vscode-descriptionForeground);font-size:11px}.chevron-icon{width:16px;height:16px;flex:0 0 16px;color:var(--vscode-descriptionForeground);transform-origin:center}.chevron-icon.expanded,.end-chevron.expanded{transform:rotate(90deg)}.chevron-icon.animate-expand{animation:project-chevron-expand 260ms cubic-bezier(.2,.75,.25,1) both}.chevron-icon.animate-collapse{animation:project-chevron-collapse 260ms cubic-bezier(.2,.75,.25,1) both}@keyframes project-chevron-expand{0%{transform:rotate(0) scale(.85)}68%{transform:rotate(98deg) scale(1.08)}100%{transform:rotate(90deg) scale(1)}}@keyframes project-chevron-collapse{0%{transform:rotate(90deg) scale(1)}68%{transform:rotate(-8deg) scale(1.08)}100%{transform:rotate(0) scale(1)}}.project-icon{color:var(--vscode-charts-blue)}
         .project-actions{margin:8px;padding:6px;border:1px solid var(--vscode-widget-border);border-radius:5px;display:block;overflow:hidden}.action-grid{display:grid;grid-template-columns:1fr;gap:3px 8px;align-items:start}.action-group{display:contents}.action-group>.action{grid-column:1}.action{display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;text-align:left;border-radius:4px;min-height:27px}.action:hover,.scene:hover{background:var(--vscode-list-hoverBackground)}.build-toggle{grid-column:1;font-weight:600;background:transparent}.build-toggle:hover{background:var(--vscode-list-hoverBackground)}
         .components{display:none;width:100%;padding:7px;border:1px solid var(--vscode-widget-border);border-radius:5px}.components.visible{display:block}.caption{margin-bottom:5px;color:var(--vscode-descriptionForeground)}.component{display:flex;align-items:center;gap:7px;padding:2px 0}.component input{accent-color:var(--vscode-checkbox-background)}.build-submit{width:100%;margin-top:6px;padding:5px;background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-button-border, var(--vscode-contrastBorder));border-radius:4px}.build-submit:hover{background:var(--vscode-list-hoverBackground)}.build-submit.running,.build-toggle.running{background:#a83f48;color:#fff;border-color:#bc555d}.build-submit.running:hover,.build-toggle.running:hover{background:#bd4a54;filter:brightness(1.04)}.build-icon{display:inline-flex;vertical-align:middle}.build-stop-icon{display:none}.build-submit.running .build-start-icon{display:none}.build-submit.running .build-stop-icon{display:block}
-        .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
+        .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command,.create-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
         @media(prefers-reduced-motion:reduce){.chevron-icon.animate-expand,.chevron-icon.animate-collapse,.end-chevron{animation:none!important;transition:none!important}}
         @media(max-width:560px){.action-grid{grid-template-columns:1fr}.components{grid-column:1;grid-row:auto}.project-row small,.scene small{display:none}}
         .add-project-row{display:flex;justify-content:flex-start;margin:8px 0 8px;padding-top:6px;border-top:1px solid var(--vscode-widget-border)}.add-project-button{width:100%;display:flex;align-items:center;gap:7px;min-height:25px;padding:3px 6px;text-align:left;color:var(--vscode-foreground);background:transparent;border:0;border-radius:4px;font:inherit;cursor:pointer}.add-project-button:hover{background:var(--vscode-list-hoverBackground)}.add-project-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}.add-project-button:disabled{opacity:0.5;cursor:not-allowed;filter:brightness(0.8)}.add-project-button:disabled:hover{background:transparent}.add-project-spacer{visibility:hidden}.add-project-label{font-weight:600}
@@ -440,7 +454,7 @@ class ProjectWebviewProvider {
 });
 document.getElementById('add-project').addEventListener('click',()=>{const button=document.getElementById('add-project');if(button.disabled)return;vscode.postMessage({type:'addProject'});});
 const blockButtonsFor2s=()=>{
-  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command]');
+  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command], .create-command');
   buttons.forEach(btn=>btn.disabled=true);
   setTimeout(()=>buttons.forEach(btn=>btn.disabled=false),5000);
 };
@@ -449,6 +463,7 @@ const blockButtonsFor2s=()=>{
           const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
           const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
           const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
+          const createCommand=event.target.closest('[data-create-command]');if(createCommand){if(createCommand.disabled)return;vscode.postMessage({type:'createGameCommand',project:projectFor(createCommand)});blockButtonsFor2s();return;}
           const button=event.target.closest('[data-action]');if(!button)return;
           if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
             const content=button.nextElementSibling;

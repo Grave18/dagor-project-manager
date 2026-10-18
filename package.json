@@ -135,6 +135,10 @@
       {
         "command": "dagorProjectManager.folderRunCommand",
         "title": "Run Command"
+      },
+      {
+        "command": "dagorProjectManager.folderCreateCommand",
+        "title": "Create Command"
       }
     ],
     "viewsContainers": {
@@ -192,6 +196,11 @@
           "command": "dagorProjectManager.runSceneInGame",
           "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'scene'",
           "group": "navigation@0"
+        },
+        {
+          "command": "dagorProjectManager.folderCreateCommand",
+          "when": "webviewId == 'dagorProjectManager.projects' && webviewSection == 'command'",
+          "group": "3_command"
         },
         {
           "command": "dagorProjectManager.revealContextTarget",
@@ -301,6 +310,10 @@
         {
           "command": "dagorProjectManager.folderRunCommand",
           "group": "5_dagor"
+        },
+        {
+          "command": "dagorProjectManager.folderCreateCommand",
+          "group": "6_dagor"
         }
       ],
       "dagorProjectManager.blkContext": [

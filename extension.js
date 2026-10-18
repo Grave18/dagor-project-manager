@@ -81,10 +81,16 @@ function activate(context) {
     ['dagorProjectManager.folderOpenDaViewer', actions.openProjectDaViewer],
     ['dagorProjectManager.folderOpenScene', actions.openProjectScene],
     ['dagorProjectManager.folderRunGame', actions.pickProjectGame],
-    ['dagorProjectManager.folderRunCommand', actions.pickProjectGameCommand]
+    ['dagorProjectManager.folderRunCommand', actions.pickProjectGameCommand],
+    ['dagorProjectManager.folderCreateCommand', actions.createProjectGameCommand]
   ];
   for (const [command, action] of folderActions) {
     context.subscriptions.push(vscode.commands.registerCommand(command, async folderUri => {
+      if (command === 'dagorProjectManager.folderCreateCommand' &&
+          (!folderUri || folderUri.scheme !== 'file' || typeof folderUri.fsPath !== 'string')) {
+        await provider.createCommandFromContext();
+        return;
+      }
       const project = await actions.findProjectForFolder(folderUri);
       if (project) await action(project);
     }));

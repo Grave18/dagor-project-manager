@@ -11,6 +11,7 @@ In the project card:
 - **Open Scene** expands `*.level.blk` levels for that project; selecting a level launches daEditor with the corresponding `application.blk`.
 - **Run Game** lists `.exe` files from the project's `game` folder and its immediate subfolders, except dedicated-server executables (`*-ded-*.exe`). The displayed name omits `.exe`. Selecting an entry launches the executable directly, without additional arguments.
 - **Run Command**, below **Run Game**, lists `.cmd` files from the `game` folder and its immediate subfolders. Selecting one opens a VS Code integrated terminal in the `game` folder and runs the command file.
+- **Create Command** in the project folder context menu or the **Run Command** heading context menu creates an empty `.cmd` file in `game` (creating that folder if needed) and opens it in the editor. Existing files are opened without being overwritten.
 - **Generate Project** is currently a placeholder and does not change any files.
 - **Stop Build** stops the running build.
 
@@ -18,7 +19,7 @@ The list of projects, scenes, and game executables updates when files are create
 
 In the Explorer menu:
 
-- discovered Dagor project folders → **Dagor Project Manager** with **Build All**, **Open daViewer**, **Open Scene**, **Run Game**, and **Run Command**; the submenu is hidden on other folders, and scene, game, and command choices appear in a searchable VS Code Quick Pick;
+- discovered Dagor project folders → **Dagor Project Manager** with **Build All**, **Open daViewer**, **Open Scene**, **Run Game**, **Run Command**, and **Create Command**; the submenu is hidden on other folders, and scene, game, and command choices appear in a searchable VS Code Quick Pick;
 - project folders are matched by full path, so unrelated folders (including ancestors that merely contain a project) do not show this submenu; nested projects and project folders opened directly as workspace folders are supported.
 - any `.blk`, including `.folder.blk` → **Open with Dagor blkEditor**;
 - `application.blk` → also **Open with Dagor daEditor** and **Open with Dagor daViewer**;

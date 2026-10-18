@@ -216,6 +216,36 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     if (selection) runProjectGameCommand(project, selection.command);
   }
 
+  async function createProjectGameCommand(project) {
+    const name = await vscode.window.showInputBox({
+      prompt: `Enter a name for a command in ${project.label}`,
+      placeHolder: 'my-command',
+      validateInput: value => /^[A-Za-z0-9][A-Za-z0-9 _-]*$/.test(value.trim())
+        ? undefined
+        : 'Use letters, numbers, spaces, underscores, or hyphens; the name must start with a letter or number.'
+    });
+    if (name === undefined) return;
+
+    const gameDirectory = path.join(project.root, 'game');
+    const commandPath = path.join(gameDirectory, `${name.trim()}.cmd`);
+    try {
+      await fs.mkdir(gameDirectory, { recursive: true });
+      await fs.writeFile(commandPath, '', { flag: 'wx' });
+    } catch (error) {
+      if (error.code !== 'EEXIST') {
+        vscode.window.showErrorMessage(`Failed to create command file: ${error.message}`);
+        return;
+      }
+    }
+
+    try {
+      const document = await vscode.workspace.openTextDocument(vscode.Uri.file(commandPath));
+      await vscode.window.showTextDocument(document);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to open command file: ${error.message}`);
+    }
+  }
+
   return {
     findProjectForFolder,
     runProjectGame,
@@ -224,6 +254,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     openProjectScene,
     pickProjectGame,
     pickProjectGameCommand,
+    createProjectGameCommand,
     startBuild: (project, components, onBuildStateChange) => buildManager.start(project, components, onBuildStateChange),
     stopBuild: (project, onBuildStateChange) => buildManager.stop(project, onBuildStateChange),
     openProjectDaViewer: toolRunner.openProjectDaViewer,

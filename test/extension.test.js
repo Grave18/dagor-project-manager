@@ -36,6 +36,8 @@ let warningPrompts = [];
 const warningResponses = [];
 let deleteTrashError;
 const terminals = [];
+const openedDocuments = [];
+const shownDocuments = [];
 
 class FakeEventEmitter {
   listeners = [];
@@ -108,6 +110,11 @@ const vscode = {
         .filter(file => !pattern.base || path.resolve(file).startsWith(`${path.resolve(pattern.base)}${path.sep}`))
         .map(fsPath => ({ scheme: 'file', fsPath }));
     },
+    async openTextDocument(fileUri) {
+      const document = { uri: fileUri };
+      openedDocuments.push(document);
+      return document;
+    },
     createFileSystemWatcher(pattern) {
       watcherPatterns.push(pattern);
       return {
@@ -122,6 +129,7 @@ const vscode = {
   window: {
     showErrorMessage(message) { errors.push(message); },
     showInformationMessage(message) { messages.push(message); },
+    async showTextDocument(document) { shownDocuments.push(document); },
     showWarningMessage(message, options, ...items) {
       warningPrompts.push({ message, options, items });
       return Promise.resolve(warningResponses.shift() ?? modalChoice);
@@ -268,6 +276,8 @@ afterEach(() => {
   executedCommands.length = 0;
   quickPickSelection = undefined;
   inputBoxValue = 'NewDemo';
+  openedDocuments.length = 0;
+  shownDocuments.length = 0;
 });
 
 test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
@@ -327,6 +337,7 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     'dagorProjectManager.folderOpenScene',
     'dagorProjectManager.folderRunGame',
     'dagorProjectManager.folderRunCommand',
+    'dagorProjectManager.folderCreateCommand',
     'dagorProjectManager.generateProject'
   ]);
   assert.ok(providers.has('dagorProjectManager.projects'));
@@ -344,7 +355,8 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
       'dagorProjectManager.folderOpenDaViewer',
       'dagorProjectManager.folderOpenScene',
       'dagorProjectManager.folderRunGame',
-      'dagorProjectManager.folderRunCommand'
+      'dagorProjectManager.folderRunCommand',
+      'dagorProjectManager.folderCreateCommand'
     ]
   );
   const deleteMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
@@ -352,6 +364,10 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
   );
   assert.equal(deleteMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'project'");
   assert.match(deleteMenuItem.group, /^z_/);
+  const createCommandMenuItem = extensionManifest.contributes.menus['webview/context'].find(item =>
+    item.command === 'dagorProjectManager.folderCreateCommand'
+  );
+  assert.equal(createCommandMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'command'");
 });
 
 test('confirms project deletion and moves its folder to the system trash', async () => {
@@ -433,7 +449,7 @@ test('leaves the project intact when permanent deletion fallback is cancelled', 
 test('places Create Project below the project list, routes it, and refreshes after creation', async () => {
   await refreshCatalog();
   const html = webviewView.webview.html;
-  assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button"><span class="chevron-icon add-project-spacer" aria-hidden="true"><svg class="icon"[\s\S]*?<\/svg><\/span><span class="project-icon"><svg class="icon"[\s\S]*?<circle cx="18" cy="17" r="4" fill="var\(--vscode-sideBar-background, var\(--vscode-editor-background\)\)"\/><path d="M18 15v4m-2-2h4"\/><\/svg><\/span><span class="add-project-label">Create Project<\/span><\/button><\/div>/);
+  assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button"[^>]*><span class="chevron-icon add-project-spacer" aria-hidden="true"><svg class="icon"[\s\S]*?<\/svg><\/span><span class="project-icon"><svg class="icon"[\s\S]*?<circle cx="18" cy="17" r="4" fill="var\(--vscode-sideBar-background, var\(--vscode-editor-background\)\)"\/><path d="M18 15v4m-2-2h4"\/><\/svg><\/span><span class="add-project-label">Create Project<\/span><\/button><\/div>/);
   assert.match(html, /getElementById\('add-project'\)\.addEventListener\('click'/);
 
   fs.writeFileSync(path.join(tempDirectory, 'build_all.py'), '# engine marker');
@@ -510,6 +526,38 @@ test('runs project-folder actions against the project under the Explorer selecti
   assert.deepEqual(quickPicks.at(-1).items.map(item => item.label), ['direct-run-stalker']);
   assert.equal(fakeTerminal.options.cwd, gameDirectory);
   assert.deepEqual(fakeTerminal.sent, [{ text: `call "${directRunCommand}"`, addNewLine: true }]);
+});
+
+test('creates and opens a command in the project selected from the Run Command context menu', async () => {
+  await refreshCatalog();
+  inputBoxValue = 'outerSpace-launch';
+  const provider = providers.get('dagorProjectManager.projects');
+  provider.setContextTarget({ kind: 'commandGroup', project: outerSpaceApplication });
+
+  await commands.get('dagorProjectManager.folderCreateCommand')({ webviewSection: 'command' });
+
+  const createdCommand = path.join(outerSpaceRoot, 'game', 'outerSpace-launch.cmd');
+  assert.equal(fs.readFileSync(createdCommand, 'utf8'), '');
+  assert.equal(openedDocuments.at(-1).uri.fsPath, createdCommand);
+  assert.equal(shownDocuments.at(-1), openedDocuments.at(-1));
+  assert.ok(!fs.existsSync(path.join(workspaceRoot, 'game', 'outerSpace-launch.cmd')));
+  fs.rmSync(path.join(outerSpaceRoot, 'game'), { recursive: true, force: true });
+});
+
+test('shows Create Command after the Run Command entries and creates the file for that project', async () => {
+  await refreshCatalog();
+  const provider = providers.get('dagorProjectManager.projects');
+  const project = provider.catalog.projects.find(item => item.applicationFile === outerSpaceApplication);
+  inputBoxValue = 'new-outer-command';
+  await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });
+
+  assert.match(webviewView.webview.html, /<div class="game-command-list">[\s\S]*?<button[^>]*data-create-command[^>]*>[^]*?Create Command[\s\S]*?<\/button><\/div>/);
+  await webviewView.webview.send({ type: 'createGameCommand', project });
+
+  const createdCommand = path.join(outerSpaceRoot, 'game', 'new-outer-command.cmd');
+  assert.equal(fs.readFileSync(createdCommand, 'utf8'), '');
+  assert.equal(openedDocuments.at(-1).uri.fsPath, createdCommand);
+  fs.rmSync(path.join(outerSpaceRoot, 'game'), { recursive: true, force: true });
 });
 
 test('Build All runs every available build component for the selected project folder', async () => {
