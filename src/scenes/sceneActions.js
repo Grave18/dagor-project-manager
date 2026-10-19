@@ -1,11 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const vscode = require('vscode');
-
-function isPathWithin(directory, candidate) {
-  const relative = path.relative(directory, candidate);
-  return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
-}
+const { isPathWithin } = require('../utils/pathUtils');
 
 function normalizeReference(value) {
   return value.replace(/\\/g, '/')

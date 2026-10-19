@@ -43,7 +43,7 @@ const vscode=acquireVsCodeApi();
             path:item.dataset.contextPath
           }:null});
         },true);
-        const projectFor=element=>JSON.parse(element.closest('.project-actions').dataset.projectData);
+        const projectIdFor=element=>element.closest('.project-actions').dataset.project;
         document.getElementById('refresh').addEventListener('click',()=>{
   if(document.getElementById('refresh').disabled)return;
   vscode.postMessage({type:'refresh'});
@@ -56,11 +56,11 @@ const blockButtonsFor2s=()=>{
 };
         document.addEventListener('click',event=>{
           const select=event.target.closest('[data-select]');if(select){selectProject(select.dataset.select);return;}
-          const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
-          const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
-          const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
-          const createCommand=event.target.closest('[data-create-command]');if(createCommand){if(createCommand.disabled)return;vscode.postMessage({type:'createGameCommand',project:projectFor(createCommand)});blockButtonsFor2s();return;}
-          const createScene=event.target.closest('[data-create-scene]');if(createScene){if(createScene.disabled)return;vscode.postMessage({type:'createScene',project:projectFor(createScene)});blockButtonsFor2s();return;}
+          const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectIdFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
+          const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectIdFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
+          const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectIdFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
+          const createCommand=event.target.closest('[data-create-command]');if(createCommand){if(createCommand.disabled)return;vscode.postMessage({type:'createGameCommand',project:projectIdFor(createCommand)});blockButtonsFor2s();return;}
+          const createScene=event.target.closest('[data-create-scene]');if(createScene){if(createScene.disabled)return;vscode.postMessage({type:'createScene',project:projectIdFor(createScene)});blockButtonsFor2s();return;}
           const button=event.target.closest('[data-action]');if(!button)return;
           if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
             const content=button.nextElementSibling;
@@ -89,7 +89,7 @@ const blockButtonsFor2s=()=>{
           if(button.dataset.action==='build'){
             const actions=button.closest('.project-actions');
             if(actions.dataset.running==='true'){
-              vscode.postMessage({type:'stopBuild',project:projectFor(button)});
+              vscode.postMessage({type:'stopBuild',project:projectIdFor(button)});
             }else{
               const components=actions.querySelector('.components');
               const visible=components.classList.toggle('visible');
@@ -100,15 +100,15 @@ const blockButtonsFor2s=()=>{
           if(button.dataset.action==='submitBuild'){
             const actions=button.closest('.project-actions');
             if(actions.dataset.running==='true'){
-              vscode.postMessage({type:'stopBuild',project:projectFor(button)});
+              vscode.postMessage({type:'stopBuild',project:projectIdFor(button)});
               return;
             }
             const components=[...actions.querySelectorAll('.component input:checked')].map(input=>input.value);
             if(components.length===0)return;
-            vscode.postMessage({type:'action',action:'build',project:projectFor(button),components});
+            vscode.postMessage({type:'action',action:'build',project:projectIdFor(button),components});
             return;
           }
-          const project=projectFor(button);
+          const project=projectIdFor(button);
           const action=button.dataset.action;
           vscode.postMessage(action==='stop'?{type:'stopBuild',project}:{type:'action',action,project});
           if(action!=='build'&&action!=='submitBuild')blockButtonsFor2s();
@@ -116,7 +116,7 @@ const blockButtonsFor2s=()=>{
         window.addEventListener('message',event=>{
           const message=event.data;
           if(message.type!=='buildState')return;
-          const actions=[...document.querySelectorAll('.project-actions')].find(item=>JSON.parse(item.dataset.projectData).applicationFile===message.project);
+          const actions=[...document.querySelectorAll('.project-actions')].find(item=>item.dataset.project===message.project);
           if(!actions)return;
           actions.dataset.running=String(message.running);
           const submit=actions.querySelector('.build-submit');

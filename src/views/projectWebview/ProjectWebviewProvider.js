@@ -3,14 +3,14 @@ const fs = require('node:fs');
 const vscode = require('vscode');
 const { BUILD_COMPONENTS } = require('../../build/buildManager');
 const { renderProjectWebview } = require('./renderProjectWebview');
-
+const { isRecord, isWebviewMessage } = require('./webviewMessages');
 
 class ProjectWebviewProvider {
-  constructor({ catalog, buildManager, actions, sceneActions, outputChannel, extensionUri }) {
+  constructor({ catalog, buildManager, actions, sceneDeletionController, outputChannel, extensionUri }) {
     this.catalog = catalog;
     this.buildManager = buildManager;
     this.actions = actions;
-    this.sceneActions = sceneActions;
+    this.sceneDeletionController = sceneDeletionController;
     this.outputChannel = outputChannel;
     this.extensionUri = extensionUri;
     this.view = undefined;
@@ -49,15 +49,6 @@ class ProjectWebviewProvider {
       this.outputChannel?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Missing webview assets in {folder}.', { folder: assetDirectory })}`);
     }
     view.webview.onDidReceiveMessage(message => this.handleMessage(message));
-    view.webview.onDidReceiveMessage(message => {
-      if (message?.type === 'ready') {
-        for (const project of this.catalog.projects) {
-          if (this.buildManager.isRunning(project)) {
-            view.webview.postMessage({ type: 'buildState', project: project.applicationFile, running: true });
-          }
-        }
-      }
-    });
     this.catalog.refresh();
     this.render();
   }
@@ -74,9 +65,17 @@ class ProjectWebviewProvider {
     }
   }
 
+  /** @param {unknown} message */
   async handleMessage(message) {
-    if (!message || typeof message !== 'object') return;
-    if (message.type === 'ready') return;
+    if (!isWebviewMessage(message)) return;
+    if (message.type === 'ready') {
+      for (const project of this.catalog.projects) {
+        if (this.buildManager.isRunning(project)) {
+          this.view?.webview.postMessage({ type: 'buildState', project: project.applicationFile, running: true });
+        }
+      }
+      return;
+    }
     if (message.type === 'setContextTarget') {
       this.setContextTarget(message.target);
       return;
@@ -90,10 +89,10 @@ class ProjectWebviewProvider {
       return;
     }
 
-    const projectData = message.project;
-    const project = typeof projectData === 'string'
-      ? this.catalog.projects.find(item => item.applicationFile === projectData)
-      : this.catalog.projects.find(item => item.applicationFile === projectData?.applicationFile);
+    const projectId = typeof message.project === 'string' ? message.project : undefined;
+    const project = projectId === undefined
+      ? undefined
+      : this.catalog.projects.find(item => item.applicationFile === projectId);
     if (message.type === 'selectProject') {
       if (!project) return;
       const previousProject = this.selectedProject;
@@ -104,7 +103,9 @@ class ProjectWebviewProvider {
         this.projectChevronAnimations.set(this.selectedProject, 'expand');
       }
       this.animateProjectPanel = previousProject !== this.selectedProject;
-      this.projectPanelFromHeight = Number.isFinite(message.fromHeight) ? Math.max(0, message.fromHeight) : 0;
+      this.projectPanelFromHeight = typeof message.fromHeight === 'number' && Number.isFinite(message.fromHeight)
+        ? Math.max(0, message.fromHeight)
+        : 0;
       this.render();
       this.animateProjectPanel = false;
       this.projectPanelFromHeight = undefined;
@@ -118,45 +119,53 @@ class ProjectWebviewProvider {
         if (this.selectedProject) this.projectChevronAnimations.set(this.selectedProject, 'expand');
       }
       this.animateProjectPanel = previousProject !== this.selectedProject;
-      this.projectPanelFromHeight = Number.isFinite(message.fromHeight) ? Math.max(0, message.fromHeight) : 0;
+      this.projectPanelFromHeight = typeof message.fromHeight === 'number' && Number.isFinite(message.fromHeight)
+        ? Math.max(0, message.fromHeight)
+        : 0;
       this.render();
       this.animateProjectPanel = false;
       this.projectPanelFromHeight = undefined;
     } else if (message.type === 'action') {
       if (message.action === 'build') {
+        if (!project) return;
         const components = Array.isArray(message.components)
-          ? message.components.filter(component => BUILD_COMPONENTS.some(item => item.value === component))
+          ? message.components.filter(component => typeof component === 'string' && BUILD_COMPONENTS.some(item => item.value === component))
           : [];
-        this.actions.startBuild(project || projectData, components, running => {
+        this.actions.startBuild(project, components, running => {
           if (this.view) this.view.webview.postMessage({
             type: 'buildState',
-            project: (project || projectData).applicationFile,
+            project: project.applicationFile,
             running
           });
         });
       } else if (message.action === 'viewer') {
-        await this.actions.openProjectDaViewer(project || projectData);
+        if (!project) return;
+        await this.actions.openProjectDaViewer(project);
       } else if (message.action === 'generate') {
         await vscode.commands.executeCommand('dagorProjectManager.generateProject');
       }
     } else if (message.type === 'openScene') {
-      const scenePath = typeof projectData === 'object'
-        ? projectData.scenes?.find(item => item.uri === message.scene)?.uri
-        : project?.scenes.find(item => item.uri.fsPath === message.scene)?.uri.fsPath;
-      if (scenePath) await this.actions.openSceneInDaEditor(vscode.Uri.file(scenePath));
+      if (!project || typeof message.scene !== 'string') return;
+      const scene = project.scenes.find(item => item.uri.fsPath === message.scene);
+      if (scene) await this.actions.openSceneInDaEditor(scene.uri);
     } else if (message.type === 'runGame') {
-      this.actions.runProjectGame(project, message.executable);
+      if (!project || typeof message.executable !== 'string') return;
+      const game = project.games.find(item => item.executable === message.executable);
+      if (game) this.actions.runProjectGame(project, game.executable);
     } else if (message.type === 'runGameCommand') {
-      this.actions.runProjectGameCommand(project, message.command);
+      if (!project || typeof message.command !== 'string') return;
+      const command = project.gameCommands.find(item => item.command === message.command);
+      if (command) this.actions.runProjectGameCommand(project, command.command);
     } else if (message.type === 'createGameCommand') {
       if (project) await this.actions.createProjectGameCommand(project);
     } else if (message.type === 'createScene') {
       if (project) await this.actions.createProjectScene(project);
     } else if (message.type === 'stopBuild') {
-      this.actions.stopBuild(project || projectData, running => {
+      if (!project) return;
+      this.actions.stopBuild(project, running => {
         if (this.view) this.view.webview.postMessage({
           type: 'buildState',
-          project: (project || projectData).applicationFile,
+          project: project.applicationFile,
           running
         });
       });
@@ -168,7 +177,8 @@ class ProjectWebviewProvider {
     this.contextTargetName = undefined;
     this.contextTargetProject = undefined;
     this.contextTargetKind = undefined;
-    const project = this.catalog.projects.find(item => item.applicationFile === target?.project);
+    if (!isRecord(target) || typeof target.project !== 'string' || typeof target.kind !== 'string') return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project);
     if (!project) return;
 
     if (target.kind === 'project') {
@@ -326,136 +336,8 @@ class ProjectWebviewProvider {
   async deleteContextScene() {
     const target = this.takeContextTarget();
     if (target.kind !== 'scene' || !target.project || !target.path) return;
-    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
-    const scene = project?.scenes.find(item => path.resolve(item.uri.fsPath) === path.resolve(target.path));
-    if (!project || !scene) return;
-
-    let details;
-    try {
-      details = await this.sceneActions.inspectDeletion(project, scene.uri.fsPath);
-    } catch (error) {
-      this.outputChannel?.show(true);
-      this.outputChannel?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Could not inspect scene {scene}: {error}', { scene: scene.label, error: error.message })}`);
-      vscode.window.showErrorMessage(vscode.l10n.t('Could not inspect scene {scene}: {error}', { scene: scene.label, error: error.message }));
-      return;
-    }
-
-    if (!details.canDelete) {
-      this.outputChannel?.show(true);
-      this.outputChannel?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Refused to delete scene {scene}.', { scene: scene.label })}`);
-      this.outputChannel?.appendLine(`[DAGOR_PM] ${details.reason}`);
-      vscode.window.showWarningMessage(vscode.l10n.t('Cannot safely delete scene "{scene}".', { scene: scene.label }), { modal: true, detail: details.reason }, vscode.l10n.t('OK'));
-      return;
-    }
-
-    const listedReferences = details.references.slice(0, 10);
-    const referenceLines = details.references.length > 0
-      ? `${listedReferences.map(reference => `${reference.file}:${reference.line}`).join('\n')}${details.references.length > listedReferences.length ? `\n…and ${details.references.length - listedReferences.length} more; see Output.` : ''}`
-      : details.referenceScanError
-        ? vscode.l10n.t('Reference scan failed: {error}', { error: details.referenceScanError })
-        : vscode.l10n.t('No static references found.');
-    const confirmationDetail = [
-      vscode.l10n.t('Scene folder (to system trash):\n{path}', { path: details.sceneDirectory }),
-      details.exportTargets.length > 0
-        ? vscode.l10n.t('Export files (to system trash):\n{paths}{warning}', { paths: details.exportTargets.join('\n'), warning: details.exportWarning ? `\n${vscode.l10n.t('Attention: {warning}', { warning: details.exportWarning })}` : '' })
-        : vscode.l10n.t('Export files: none found{warning}', { warning: details.exportWarning ? ` (${details.exportWarning})` : '' }),
-      vscode.l10n.t('References (will be left unchanged):\n{references}', { references: referenceLines }),
-      vscode.l10n.t('Static scanning may not detect references assembled or loaded by code.'),
-      vscode.l10n.t('Assets will not be deleted.')
-    ].join('\n\n');
-    const output = this.outputChannel;
-    output?.appendLine('');
-    output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Scene deletion inspection: {scene} in {project}.', { scene: scene.label, project: project.label })}`);
-    output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Scene folder: {path}', { path: details.sceneDirectory })}`);
-    if (details.exportTargets.length > 0) {
-      for (const exportPath of details.exportTargets) output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Export target: {path}', { path: exportPath })}`);
-    }
-    if (details.exportWarning || details.exportTargets.length === 0) {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Attention: {warning}', { warning: details.exportWarning || vscode.l10n.t('No export files were identified.') })}`);
-    }
-    if (details.referenceScanError) {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Attention: static reference scan failed: {error}', { error: details.referenceScanError })}`);
-    } else if (details.references.length > 0) {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Attention: these references were found and will not be changed:')}`);
-      for (const reference of details.references) {
-        output?.appendLine(`  ${reference.file}:${reference.line}: ${reference.text}`);
-      }
-    } else {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('No direct textual references were found. Dynamic references may not be detected.')}`);
-    }
-    output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Assets are not part of scene deletion and will be left untouched.')}`);
-    if (details.references.length > listedReferences.length || details.referenceScanError) output?.show(true);
-    const confirmation = await vscode.window.showWarningMessage(
-      vscode.l10n.t('Delete scene "{scene}"?', { scene: scene.label }),
-      { modal: true, detail: confirmationDetail },
-      vscode.l10n.t('Delete Scene'),
-      vscode.l10n.t('Cancel')
-    );
-    if (confirmation !== vscode.l10n.t('Delete Scene')) return;
-
-    output?.show(true);
-    output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('User confirmed deletion of scene {scene}.', { scene: scene.label })}`);
-
-    const deletedPaths = [];
-    let failedTargets = [];
-    for (const targetPath of details.targets) {
-      try {
-        await vscode.workspace.fs.delete(vscode.Uri.file(targetPath), { recursive: true, useTrash: true });
-        deletedPaths.push(targetPath);
-        output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Moved to system trash: {path}', { path: targetPath })}`);
-      } catch (error) {
-        failedTargets.push({ path: targetPath, message: error.message });
-        output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Failed to move to system trash: {path} ({error})', { path: targetPath, error: error.message })}`);
-      }
-    }
-
-    if (failedTargets.length > 0) {
-      const fallbackChoice = await vscode.window.showWarningMessage(
-        vscode.l10n.t('Some files for scene "{scene}" could not be moved to the system trash.', { scene: scene.label }),
-        {
-          modal: true,
-          detail: vscode.l10n.t('Permanently deleting these paths cannot be undone:\n{paths}', { paths: failedTargets.map(item => `${item.path}\n${item.message}`).join('\n') })
-        },
-        vscode.l10n.t('Permanently Delete'),
-        vscode.l10n.t('Cancel')
-      );
-      if (fallbackChoice === vscode.l10n.t('Permanently Delete')) {
-        const retryTargets = failedTargets;
-        failedTargets = [];
-        for (const item of retryTargets) {
-          try {
-            await vscode.workspace.fs.delete(vscode.Uri.file(item.path), { recursive: true });
-            deletedPaths.push(item.path);
-            output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Permanently deleted: {path}', { path: item.path })}`);
-          } catch (error) {
-            failedTargets.push({ path: item.path, message: error.message });
-            output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Permanent deletion failed: {path} ({error})', { path: item.path, error: error.message })}`);
-          }
-        }
-      } else {
-        output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Permanent deletion was cancelled; failed paths were left in place.')}`);
-      }
-    }
-
-    const sourceFolderDeleted = deletedPaths.includes(details.sceneDirectory);
-    if (sourceFolderDeleted) {
-      try {
-        await this.catalog.refresh();
-      } catch (error) {
-        output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Attention: scene was deleted, but the project list could not be refreshed: {error}', { error: error.message })}`);
-      }
-    }
-    if (failedTargets.length > 0) {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Scene deletion partially completed: {count} path(s) remain.', { count: failedTargets.length })}`);
-      vscode.window.showWarningMessage(vscode.l10n.t('Scene "{scene}" was only partially deleted. See the Dagor Project Manager output.', { scene: scene.label }));
-    } else {
-      output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Scene deletion finished. {count} path(s) removed.', { count: deletedPaths.length })}`);
-      if (!sourceFolderDeleted) {
-        vscode.window.showErrorMessage(vscode.l10n.t('Scene folder {path} was not deleted. See the Dagor Project Manager output.', { path: details.sceneDirectory }));
-      }
-    }
+    await this.sceneDeletionController.deleteScene(target.project.applicationFile, target.path);
   }
-
   async createCommandFromContext() {
     const target = this.takeContextTarget();
     if (target.kind !== 'commandGroup' || !target.project) return;
@@ -475,20 +357,24 @@ class ProjectWebviewProvider {
   async runContextSceneInGame() {
     const target = this.takeContextTarget();
     if (target.kind !== 'scene' || !target.project || !target.path) return;
-    await this.actions.runProjectSceneInGame(target.project, target.path);
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    const scene = project?.scenes.find(item => path.resolve(item.uri.fsPath) === path.resolve(target.path));
+    if (project && scene) await this.actions.runProjectSceneInGame(project, scene.uri.fsPath);
   }
 
   runContextBuild(components) {
     const target = this.takeContextTarget();
     if (target.kind !== 'build' || !target.project) return;
+    const project = this.catalog.projects.find(item => item.applicationFile === target.project.applicationFile);
+    if (!project) return;
     const selectedComponents = Array.isArray(components)
-      ? components.filter(component => BUILD_COMPONENTS.some(item => item.value === component))
+      ? components.filter(component => typeof component === 'string' && BUILD_COMPONENTS.some(item => item.value === component))
       : [];
     if (selectedComponents.length === 0) return;
-    this.actions.startBuild(target.project, selectedComponents, running => {
+    this.actions.startBuild(project, selectedComponents, running => {
       if (this.view) this.view.webview.postMessage({
         type: 'buildState',
-        project: target.project.applicationFile,
+        project: project.applicationFile,
         running
       });
     });

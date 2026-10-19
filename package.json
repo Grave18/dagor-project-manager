@@ -22,7 +22,8 @@
   "l10n": "./l10n",
   "scripts": {
     "extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
-    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js"
+    "typecheck": "tsc --project tsconfig.json",
+    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js test/pathUtils.test.js test/sceneDeletionController.test.js"
   },
   "contributes": {
     "commands": [
@@ -415,6 +416,9 @@
     }
   },
   "devDependencies": {
-    "@vscode/l10n-dev": "^0.0.35"
+    "@types/node": "^18.19.130",
+    "@types/vscode": "1.85.0",
+    "@vscode/l10n-dev": "^0.0.35",
+    "typescript": "^7.0.2"
   }
 }

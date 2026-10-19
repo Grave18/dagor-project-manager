@@ -1,14 +1,10 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const vscode = require('vscode');
+const { isPathWithin } = require('../utils/pathUtils');
 
 function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) {
   const vscode = vscodeApi;
-
-  function isPathWithin(directory, candidate) {
-    const relative = path.relative(directory, candidate);
-    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
-  }
 
   async function getSceneExportDirectory(project) {
     for (const scene of project.scenes || []) {

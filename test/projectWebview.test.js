@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { renderProjectWebview } = require('../src/views/projectWebview/renderProjectWebview');
+const { isWebviewMessage } = require('../src/views/projectWebview/webviewMessages');
 
 function makeProject(overrides = {}) {
   const root = 'D:/DagorEngine/Demo';
@@ -15,6 +16,17 @@ function makeProject(overrides = {}) {
     ...overrides
   };
 }
+
+test('webview message validation accepts supported request shapes only', () => {
+  assert.equal(isWebviewMessage({ type: 'openScene', project: '/engine/demo/application.blk', scene: '/engine/demo/level.blk' }), true);
+  assert.equal(isWebviewMessage({ type: 'action', action: 'build', project: '/engine/demo/application.blk', components: ['code'] }), true);
+  assert.equal(isWebviewMessage({ type: 'setContextTarget', target: null }), true);
+  assert.equal(isWebviewMessage({ type: 'openScene', project: { applicationFile: '/engine/demo/application.blk' }, scene: '/engine/demo/level.blk' }), false);
+  assert.equal(isWebviewMessage({ type: 'action', action: 'shell', project: '/engine/demo/application.blk' }), false);
+  assert.equal(isWebviewMessage({ type: 'runGame', project: '/engine/demo/application.blk', executable: 7 }), false);
+  assert.equal(isWebviewMessage({ type: 'unknown' }), false);
+  assert.equal(isWebviewMessage([]), false);
+});
 
 test('renderer keeps project, selected-card rows, and context metadata', () => {
   const project = makeProject();

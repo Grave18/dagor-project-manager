@@ -336,10 +336,6 @@ async function refreshCatalog() {
   await commands.get('dagorProjectManager.refreshProjects')();
 }
 
-function projectData(applicationPath, rootPath, label, scenes = []) {
-  return { applicationFile: applicationPath, root: rootPath, label, scenes };
-}
-
 test('registers Explorer commands and the Dagor webview sidebar', () => {
   assert.deepEqual([...commands.keys()], [
     'dagorProjectManager.openWithBlkEditor',
@@ -657,7 +653,7 @@ test('shows Create Command after the Run Command entries and creates the file fo
   await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });
 
   assert.match(webviewView.webview.html, /<div class="game-command-list">[\s\S]*?<button[^>]*data-create-command[^>]*>[^]*?Create Command[\s\S]*?<\/button><\/div>/);
-  await webviewView.webview.send({ type: 'createGameCommand', project });
+  await webviewView.webview.send({ type: 'createGameCommand', project: project.applicationFile });
 
   const createdCommand = path.join(outerSpaceRoot, 'game', 'new-outer-command.cmd');
   assert.equal(fs.readFileSync(createdCommand, 'utf8'), '');
@@ -771,19 +767,34 @@ test('renders projects separately with only their own scenes', async () => {
   assert.match(expanded, /class="icon build-stop-icon"/);
   assert.match(css, /\.build-submit\.running \.build-start-icon\{display:none\}/);
   assert.doesNotMatch(expanded, /[▶■⌘⟳❯🞃]/);
-  assert.match(expanded, new RegExp(`data-project="${applicationFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*data-project-data=`));
+  assert.match(expanded, new RegExp(`data-project="${applicationFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+  assert.doesNotMatch(expanded, /data-project-data=/);
   await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });
   assert.match(webviewView.webview.html, /class="chevron-icon animate-collapse"/);
   assert.match(webviewView.webview.html, /class="chevron-icon expanded animate-expand"/);
   const stalkerSection = webviewView.webview.html.split('<section class="project')[1].split('</section>')[0];
   assert.doesNotMatch(stalkerSection, /project-actions/);
-  const project = projectData(applicationFile, workspaceRoot, 'project_stalker', [
-    { uri: levelFile, label: 'sample' },
-    { uri: secondLevelFile, label: 'another' }
-  ]);
-  await webviewView.webview.send({ type: 'openScene', project, scene: levelFile });
+  await webviewView.webview.send({ type: 'openScene', project: applicationFile, scene: levelFile });
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'daEditor3x-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [applicationFile, levelFile]);
+});
+
+test('rejects object-shaped and unknown project identifiers and forged scene paths', async () => {
+  const launchesBefore = launches.length;
+  await webviewView.webview.send({
+    type: 'action',
+    action: 'build',
+    project: { applicationFile: outerSpaceApplication, root: outerSpaceRoot },
+    components: ['assets']
+  });
+  await webviewView.webview.send({
+    type: 'action',
+    action: 'viewer',
+    project: { applicationFile: outerSpaceApplication, root: outerSpaceRoot }
+  });
+  await webviewView.webview.send({ type: 'action', action: 'build', project: path.join(tempDirectory, 'unknown', 'application.blk'), components: ['code'] });
+  await webviewView.webview.send({ type: 'openScene', project: applicationFile, scene: path.join(workspaceRoot, 'forged.level.blk') });
+  assert.equal(launches.length, launchesBefore);
 });
 
 test('shows a searching state while an asynchronous project refresh is pending', async () => {
@@ -845,8 +856,7 @@ test('renders Russian webview copy and exposes translated build-state labels', a
 });
 
 test('runs selected components for the project from the webview', async () => {
-  const project = projectData(outerSpaceApplication, outerSpaceRoot, 'outerSpace');
-  await webviewView.webview.send({ type: 'action', action: 'build', project, components: ['assets', 'ignored'] });
+  await webviewView.webview.send({ type: 'action', action: 'build', project: outerSpaceApplication, components: ['assets', 'ignored'] });
   assert.equal(launches.at(-1).executable, 'python');
   assert.deepEqual(launches.at(-1).args, [path.join(outerSpaceProg, 'build.py'), 'assets']);
   assert.equal(launches.at(-1).options.cwd, outerSpaceProg);
@@ -870,11 +880,10 @@ test('runs selected components for the project from the webview', async () => {
 });
 
 test('rejects empty component selections and launches daViewer for the selected project', async () => {
-  const project = projectData(outerSpaceApplication, outerSpaceRoot, 'outerSpace');
-  await webviewView.webview.send({ type: 'action', action: 'build', project, components: [] });
+  await webviewView.webview.send({ type: 'action', action: 'build', project: outerSpaceApplication, components: [] });
   assert.equal(launches.length, 0);
 
-  await webviewView.webview.send({ type: 'action', action: 'viewer', project });
+  await webviewView.webview.send({ type: 'action', action: 'viewer', project: outerSpaceApplication });
   assert.equal(launches.at(-1).executable, path.join(toolsDirectory, 'assetViewer2-dev.exe'));
   assert.deepEqual(launches.at(-1).args, [outerSpaceApplication]);
 });
@@ -889,13 +898,12 @@ test('lists game executables dynamically and launches the selected executable wi
     assert.ok(webviewView.webview.html.includes(`data-game="${newGameExecutable}"`));
     assert.ok(webviewView.webview.html.includes('<span>new-game</span>'));
 
-    const project = projectData(applicationFile, workspaceRoot, 'project_stalker');
-    await webviewView.webview.send({ type: 'runGame', project, executable: newGameExecutable });
+    await webviewView.webview.send({ type: 'runGame', project: applicationFile, executable: newGameExecutable });
     assert.equal(launches.at(-1).executable, newGameExecutable);
     assert.deepEqual(launches.at(-1).args, []);
     assert.equal(launches.at(-1).options.cwd, gameDirectory);
 
-    await webviewView.webview.send({ type: 'runGame', project, executable: scriptedGameExe });
+    await webviewView.webview.send({ type: 'runGame', project: applicationFile, executable: scriptedGameExe });
     assert.equal(launches.at(-1).executable, scriptedGameExe);
     assert.deepEqual(launches.at(-1).args, []);
     assert.equal(launches.at(-1).options.cwd, gameDirectory);
@@ -903,7 +911,7 @@ test('lists game executables dynamically and launches the selected executable wi
     assert.equal(launches.at(-1).options.windowsHide, false);
 
     const beforeCommandLaunch = launches.length;
-    await webviewView.webview.send({ type: 'runGameCommand', project, command: directRunCommand });
+    await webviewView.webview.send({ type: 'runGameCommand', project: applicationFile, command: directRunCommand });
     assert.equal(terminals.length, 1);
     assert.equal(fakeTerminal.options.name, 'Dagor: direct-run-stalker');
     assert.equal(fakeTerminal.options.cwd, gameDirectory);
@@ -911,12 +919,14 @@ test('lists game executables dynamically and launches the selected executable wi
     assert.equal(fakeTerminal.shown, true);
     assert.deepEqual(fakeTerminal.sent, [{ text: `call "${directRunCommand}"`, addNewLine: true }]);
 
-    await webviewView.webview.send({ type: 'runGameCommand', project, command: deeplyNestedGameExe });
-    assert.match(errors.at(-1), /valid game command/);
+    const errorsBeforeInvalidCommand = errors.length;
+    await webviewView.webview.send({ type: 'runGameCommand', project: applicationFile, command: deeplyNestedGameExe });
+    assert.equal(errors.length, errorsBeforeInvalidCommand);
     assert.equal(launches.length, beforeCommandLaunch);
 
-    await webviewView.webview.send({ type: 'runGame', project, executable: deeplyNestedGameExe });
-    assert.match(errors.at(-1), /valid game executable/);
+    const errorsBeforeInvalidGame = errors.length;
+    await webviewView.webview.send({ type: 'runGame', project: applicationFile, executable: deeplyNestedGameExe });
+    assert.equal(errors.length, errorsBeforeInvalidGame);
     assert.equal(launches.length, beforeCommandLaunch);
   } finally {
     fs.rmSync(newGameExecutable, { force: true });
@@ -924,12 +934,11 @@ test('lists game executables dynamically and launches the selected executable wi
 });
 
 test('the build button changes to stop while a build runs and stops the selected build', async () => {
-  const project = projectData(applicationFile, workspaceRoot, 'project_stalker');
-  await webviewView.webview.send({ type: 'action', action: 'build', project, components: ['code'] });
+  await webviewView.webview.send({ type: 'action', action: 'build', project: applicationFile, components: ['code'] });
   const runningChild = fakeChild;
   await webviewView.webview.send({ type: 'selectProject', project: applicationFile });
   assert.match(webviewView.webview.html, /build-submit running[^>]*aria-label="Stop Build"/);
-  await webviewView.webview.send({ type: 'stopBuild', project });
+  await webviewView.webview.send({ type: 'stopBuild', project: applicationFile });
   assert.deepEqual(runningChild.stopRequest.args, ['/pid', '12345', '/t', '/f']);
   assert.equal(runningChild.stopRequest.options.windowsHide, true);
   assert.deepEqual(webviewView.webview.postedMessage, {
@@ -938,7 +947,7 @@ test('the build button changes to stop while a build runs and stops the selected
     running: false
   });
 
-  await webviewView.webview.send({ type: 'action', action: 'generate', project });
+  await webviewView.webview.send({ type: 'action', action: 'generate', project: applicationFile });
   assert.ok(executedCommands.some(item => item.command === 'dagorProjectManager.generateProject'));
 });
 

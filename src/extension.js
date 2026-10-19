@@ -8,6 +8,7 @@ const { BuildManager, BUILD_COMPONENTS } = require('./build/buildManager');
 const { ProjectWebviewProvider } = require('./views/projectWebview/ProjectWebviewProvider');
 const { createProjectActions } = require('./projects/projectActions');
 const { createSceneActions } = require('./scenes/sceneActions');
+const { createSceneDeletionController } = require('./scenes/sceneDeletionController');
 const { createProject, findDagorEngineRoots } = require('./projects/projectGenerator');
 const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 
@@ -78,7 +79,8 @@ function activate(context) {
   }));
   const outputChannel = vscode.window.createOutputChannel(vscode.l10n.t('Dagor Project Manager'));
   context.subscriptions.push(outputChannel);
-  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneActions, outputChannel, extensionUri: context.extensionUri });
+  const sceneDeletionController = createSceneDeletionController({ vscodeApi: vscode, catalog, sceneActions, outputChannel });
+  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneDeletionController, outputChannel, extensionUri: context.extensionUri });
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTarget', () =>
     provider.revealContextTarget()));
@@ -222,6 +224,4 @@ function activate(context) {
   catalog.refresh();
 }
 
-function deactivate() {}
-
-module.exports = { activate, deactivate };
+module.exports = { activate };

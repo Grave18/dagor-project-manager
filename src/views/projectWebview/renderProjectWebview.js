@@ -65,12 +65,6 @@ function renderProjectWebview({ projects = [], buildComponents = [], selectedPro
     if (project) {
       const projectId = escapeHtml(project.applicationFile);
       const running = selectedProjectRunning;
-      const projectData = escapeHtml(JSON.stringify({
-        root: project.root,
-        applicationFile: project.applicationFile,
-        label: project.label,
-        scenes: project.scenes.map(scene => ({ uri: scene.uri.fsPath, label: scene.label }))
-      }));
       const scenes = project.scenes.map(scene => `
         <button type="button" class="scene" data-scene="${escapeHtml(scene.uri.fsPath)}" data-context-kind="scene" data-context-project="${projectId}" data-context-path="${escapeHtml(scene.uri.fsPath)}" data-vscode-context='{"webviewSection":"scene","preventDefaultContextMenuItems":true}' title="${escapeHtml(scene.uri.fsPath)}">
           <span class="scene-icon">${iconSvg('scene')}</span><span>${escapeHtml(scene.label)}</span><small>${escapeHtml(scene.relativePath)}</small>
@@ -86,7 +80,7 @@ function renderProjectWebview({ projects = [], buildComponents = [], selectedPro
       const buildItems = buildComponents.map(item => `
         <label class="component"><input type="checkbox" value="${item.value}" checked><span>${item.label}</span></label>`).join('');
       projectActions = `
-        <section class="project-actions${animation?.animateProjectPanel ? ' opening' : ''}"${animation?.animateProjectPanel ? ` style="height:${animation?.projectPanelFromHeight ?? 0}px"` : ''} data-project="${projectId}" data-project-data="${projectData}" data-running="${running}">
+        <section class="project-actions${animation?.animateProjectPanel ? ' opening' : ''}"${animation?.animateProjectPanel ? ` style="height:${animation?.projectPanelFromHeight ?? 0}px"` : ''} data-project="${projectId}" data-running="${running}">
           <div class="action-grid">
             <div class="action-group">
           <button type="button" class="action build-toggle" data-action="build" data-context-kind="build" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"build","preventDefaultContextMenuItems":true}' aria-expanded="${running}" aria-label="${escapeHtml(strings.buildProject || 'Build Project')}">${iconSvg('build')} <span>${escapeHtml(strings.buildProject || 'Build Project')}</span></button>

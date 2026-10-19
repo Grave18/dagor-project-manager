@@ -3,11 +3,11 @@ const vscode = require('vscode');
 const { findBuildScript } = require('../projects/projectCatalog');
 
 const BUILD_COMPONENTS = [
-  { label: 'Code', description: 'Build game and code binaries', value: 'code' },
-  { label: 'Shaders', description: 'Compile shaders', value: 'shaders' },
-  { label: 'Assets', description: 'Build project assets', value: 'assets' },
-  { label: 'Vromfs', description: 'Pack virtual file systems', value: 'vromfs' },
-  { label: 'Gui', description: 'Build GUI data', value: 'gui' }
+  { label: 'Code', value: 'code' },
+  { label: 'Shaders', value: 'shaders' },
+  { label: 'Assets', value: 'assets' },
+  { label: 'Vromfs', value: 'vromfs' },
+  { label: 'Gui', value: 'gui' }
 ];
 const INTERNAL_BUILD_COMPONENTS = new Set(['editor_shaders']);
 
