@@ -76,7 +76,7 @@ function activate(context) {
         vscode.window.showErrorMessage(vscode.l10n.t('Failed to update Dagor project folder menu: {error}', { error: error.message }));
       });
   }));
-  const outputChannel = vscode.window.createOutputChannel('Dagor Project Manager');
+  const outputChannel = vscode.window.createOutputChannel(vscode.l10n.t('Dagor Project Manager'));
   context.subscriptions.push(outputChannel);
   const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneActions, outputChannel, extensionUri: context.extensionUri });
   context.subscriptions.push(provider.disposable);

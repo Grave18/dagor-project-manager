@@ -14,6 +14,7 @@
   "The selected folder is not a DagorEngine root: {path}": "The selected folder is not a DagorEngine root: {path}",
   "A project folder already exists: {path}": "A project folder already exists: {path}",
   "Failed to update Dagor project folder menu: {error}": "Failed to update Dagor project folder menu: {error}",
+  "Dagor Project Manager": "Dagor Project Manager",
   "Cannot find DagorEngine. Open a folder inside DagorEngine or set dagorProjectManager.toolsDirectory.": "Cannot find DagorEngine. Open a folder inside DagorEngine or set dagorProjectManager.toolsDirectory.",
   "Select the DagorEngine folder for the new project": "Select the DagorEngine folder for the new project",
   "Enter a name for the new Dagor project": "Enter a name for the new Dagor project",

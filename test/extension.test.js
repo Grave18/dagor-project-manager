@@ -17,6 +17,7 @@ const commands = new Map();
 const executedCommands = [];
 const errors = [];
 const messages = [];
+const localizationCalls = [];
 const launches = [];
 const providers = new Map();
 const contextKeys = new Map();
@@ -29,6 +30,7 @@ let toolsDirectory;
 let sceneFiles = [];
 let applicationFiles = [];
 let outputChannel;
+let outputChannelName;
 let fakeChild;
 let webviewView;
 let fakeTerminal;
@@ -66,6 +68,7 @@ const vscode = {
   env: { get language() { return runtimeLanguage; } },
   l10n: {
     t(message, args = {}) {
+      localizationCalls.push(message);
       const template = runtimeTranslations[message] || message;
       const values = Array.isArray(args) ? args : args;
       return template.replace(/\{([\w]+)\}/g, (match, key) => values[key] ?? match);
@@ -155,8 +158,10 @@ const vscode = {
       return Promise.resolve(items.find(item => item.label === quickPickSelection) || items[0]);
     },
     showInputBox() { return Promise.resolve(inputBoxValue); },
-    createOutputChannel() {
+    createOutputChannel(name) {
       outputChannel = new FakeOutputChannel();
+      outputChannel.name = name;
+      outputChannelName = name;
       return outputChannel;
     },
     createTerminal(options) {
@@ -411,6 +416,11 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
     item.command === 'dagorProjectManager.folderCreateScene'
   );
   assert.equal(createSceneMenuItem.when, "webviewId == 'dagorProjectManager.projects' && webviewSection == 'sceneGroup'");
+});
+
+test('localizes the output channel title through the runtime localization API', () => {
+  assert.ok(localizationCalls.includes('Dagor Project Manager'));
+  assert.equal(outputChannelName, 'Dagor Project Manager');
 });
 
 test('confirms project deletion and moves its folder to the system trash', async () => {

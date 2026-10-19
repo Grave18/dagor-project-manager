@@ -175,5 +175,6 @@
   "exit code {code}": "код завершения {code}",
   "blkEditor executable": "исполняемый файл blkEditor",
   "daViewer executable": "исполняемый файл daViewer",
-  "daEditor executable": "исполняемый файл daEditor"
+  "daEditor executable": "исполняемый файл daEditor",
+  "Dagor Project Manager": "Dagor Project Manager"
 }
