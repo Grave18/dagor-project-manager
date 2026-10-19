@@ -1,14 +1,14 @@
 const path = require('node:path');
 const vscode = require('vscode');
 const { spawn } = require('node:child_process');
-const { ProjectCatalog } = require('./projectCatalog');
-const dagorTools = require('./dagorTools');
+const { ProjectCatalog } = require('./projects/projectCatalog');
+const dagorTools = require('./dagor/dagorTools');
 const { runTool, openSceneInDaEditor, openProjectDaViewer } = dagorTools;
-const { BuildManager, BUILD_COMPONENTS } = require('./buildManager');
-const { ProjectWebviewProvider } = require('./projectWebview');
-const { createProjectActions } = require('./projectActions');
-const { createSceneActions } = require('./sceneActions');
-const { createProject, findDagorEngineRoots } = require('./projectGenerator');
+const { BuildManager, BUILD_COMPONENTS } = require('./build/buildManager');
+const { ProjectWebviewProvider } = require('./views/projectWebview');
+const { createProjectActions } = require('./projects/projectActions');
+const { createSceneActions } = require('./scenes/sceneActions');
+const { createProject, findDagorEngineRoots } = require('./projects/projectGenerator');
 const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 
 function activate(context) {

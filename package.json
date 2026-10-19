@@ -18,7 +18,7 @@
   "categories": [
     "Other"
   ],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "scripts": {
     "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js"
   },

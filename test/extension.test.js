@@ -204,7 +204,7 @@ childProcess.spawn = (executable, args, options) => {
   fakeChild = child;
   return child;
 };
-const extension = require('../extension');
+const extension = require('../src/extension');
 Module._load = originalLoad;
 childProcess.spawn = originalSpawn;
 

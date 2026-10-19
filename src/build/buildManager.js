@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { findBuildScript } = require('./projectCatalog');
+const { findBuildScript } = require('../projects/projectCatalog');
 
 const BUILD_COMPONENTS = [
   { label: 'Code', description: 'Build game and code binaries', value: 'code' },

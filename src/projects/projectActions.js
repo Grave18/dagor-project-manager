@@ -327,7 +327,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       return;
     }
 
-    const templateDirectory = path.join(__dirname, 'templates', 'starter-project', 'develop', 'levels', '__PROJECT_NAME__');
+    const templateDirectory = path.join(__dirname, '..', '..', 'templates', 'starter-project', 'develop', 'levels', '__PROJECT_NAME__');
     const sceneExportDirectory = await getSceneExportDirectory(project);
     const templateFiles = [
       ['__PROJECT_NAME__.level.blk', `${sceneName}.level.blk`],

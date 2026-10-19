@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
 const path = require('node:path');
 const vscode = require('vscode');
-const { BUILD_COMPONENTS } = require('./buildManager');
+const { BUILD_COMPONENTS } = require('../build/buildManager');
 
 const ICON_PATHS = {
   chevron: '<path d="m9 18 6-6-6-6"/>',

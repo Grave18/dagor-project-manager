@@ -4,7 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const { createProject, findDagorEngineRoots } = require('../projectGenerator');
+const { createProject, findDagorEngineRoots } = require('../src/projects/projectGenerator');
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dagor-project-generator-'));
