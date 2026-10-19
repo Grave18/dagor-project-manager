@@ -9,6 +9,8 @@ const childProcess = require('node:child_process');
 const test = require('node:test');
 const { afterEach } = test;
 const extensionManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+const packageNls = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.nls.json'), 'utf8'));
+const resolvePackageString = value => value.replace(/%([\w.-]+)%/g, (match, key) => packageNls[key] ?? match);
 
 const commands = new Map();
 const executedCommands = [];
@@ -293,11 +295,11 @@ test.after(() => fs.rmSync(tempDirectory, { recursive: true, force: true }));
 
 test('uses the Dagor Project Manager name and application icons in its metadata', () => {
   assert.equal(extensionManifest.name, 'dagor-project-manager');
-  assert.equal(extensionManifest.displayName, 'Dagor Project Manager');
+  assert.equal(resolvePackageString(extensionManifest.displayName), 'Dagor Project Manager');
   assert.ok(extensionManifest.activationEvents.includes('onStartupFinished'));
-  assert.equal(extensionManifest.contributes.configuration.title, 'Dagor Project Manager');
-  assert.equal(extensionManifest.contributes.viewsContainers.activitybar[0].title, 'Dagor Project Manager');
-  assert.equal(extensionManifest.contributes.submenus[0].label, 'Dagor Project Manager');
+  assert.equal(resolvePackageString(extensionManifest.contributes.configuration.title), 'Dagor Project Manager');
+  assert.equal(resolvePackageString(extensionManifest.contributes.viewsContainers.activitybar[0].title), 'Dagor Project Manager');
+  assert.equal(resolvePackageString(extensionManifest.contributes.submenus[0].label), 'Dagor Project Manager');
   assert.equal(extensionManifest.icon, 'media/dagor.png');
   assert.equal(extensionManifest.contributes.viewsContainers.activitybar[0].icon, 'media/dagor.svg');
 
@@ -561,7 +563,7 @@ test('places Create Project below the project list, routes it, and refreshes aft
     assert.match(webviewView.webview.html, /Run Game[\s\S]*Game executables should be located in game\//);
     assert.ok(refreshes > 0);
     assert.match(messages.at(-1), /NewDemo/);
-    assert.equal(extensionManifest.contributes.commands.find(item => item.command === 'dagorProjectManager.generateProject').title,
+    assert.equal(resolvePackageString(extensionManifest.contributes.commands.find(item => item.command === 'dagorProjectManager.generateProject').title),
       'Add Dagor Project');
   } finally {
     fakeChild?.emit('exit', 0);

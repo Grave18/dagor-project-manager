@@ -1,7 +1,7 @@
 {
   "name": "dagor-project-manager",
-  "displayName": "Dagor Project Manager",
-  "description": "Manage Dagor projects and open Dagor BLK files from VS Code.",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
   "license": "MIT",
   "icon": "media/dagor.png",
   "extensionKind": [
@@ -20,146 +20,146 @@
   ],
   "main": "./src/extension.js",
   "scripts": {
-    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js"
+    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js"
   },
   "contributes": {
     "commands": [
       {
         "command": "dagorProjectManager.openWithBlkEditor",
-        "title": "Open with Dagor blkEditor"
+        "title": "%command.openWithBlkEditor.title%"
       },
       {
         "command": "dagorProjectManager.openWithDaEditor",
-        "title": "Open with Dagor daEditor"
+        "title": "%command.openWithDaEditor.title%"
       },
       {
         "command": "dagorProjectManager.openWithDaViewer",
-        "title": "Open with Dagor daViewer"
+        "title": "%command.openWithDaViewer.title%"
       },
       {
         "command": "dagorProjectManager.openSceneWithDaEditor",
-        "title": "Open Scene in daEditor"
+        "title": "%command.openSceneWithDaEditor.title%"
       },
       {
         "command": "dagorProjectManager.openProjectWithDaViewer",
-        "title": "Open Project in daViewer"
+        "title": "%command.openProjectWithDaViewer.title%"
       },
       {
         "command": "dagorProjectManager.buildProject",
-        "title": "Build Project Components"
+        "title": "%command.buildProject.title%"
       },
       {
         "command": "dagorProjectManager.buildAllFromContext",
-        "title": "Build All",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildAllFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.buildCodeFromContext",
-        "title": "Code",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildCodeFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.buildShadersFromContext",
-        "title": "Shaders",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildShadersFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.buildAssetsFromContext",
-        "title": "Assets",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildAssetsFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.buildVromfsFromContext",
-        "title": "Vromfs",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildVromfsFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.buildGuiFromContext",
-        "title": "Gui",
-        "category": "Dagor Project Manager"
+        "title": "%command.buildGuiFromContext.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.generateProject",
-        "title": "Add Dagor Project"
+        "title": "%command.generateProject.title%"
       },
       {
         "command": "dagorProjectManager.refreshProjects",
-        "title": "Refresh Dagor Projects"
+        "title": "%command.refreshProjects.title%"
       },
       {
         "command": "dagorProjectManager.runSceneInGame",
-        "title": "Run In Game",
-        "category": "Dagor Project Manager"
+        "title": "%command.runSceneInGame.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.revealContextTarget",
-        "title": "Reveal in VS Code",
-        "category": "Dagor Project Manager"
+        "title": "%command.revealContextTarget.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.revealContextTargetInOS",
-        "title": "Reveal in OS Explorer",
-        "category": "Dagor Project Manager"
+        "title": "%command.revealContextTargetInOS.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.copyContextTargetName",
-        "title": "Copy Name",
-        "category": "Dagor Project Manager"
+        "title": "%command.copyContextTargetName.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.copyContextTargetFullname",
-        "title": "Copy Fullname",
-        "category": "Dagor Project Manager"
+        "title": "%command.copyContextTargetFullname.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.deleteContextProject",
-        "title": "Delete Project",
-        "category": "Dagor Project Manager"
+        "title": "%command.deleteContextProject.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.deleteContextCommand",
-        "title": "Delete Command",
-        "category": "Dagor Project Manager"
+        "title": "%command.deleteContextCommand.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.deleteContextScene",
-        "title": "Delete Scene",
-        "category": "Dagor Project Manager"
+        "title": "%command.deleteContextScene.title%",
+        "category": "%extension.category%"
       },
       {
         "command": "dagorProjectManager.folderBuildAll",
-        "title": "Build All"
+        "title": "%command.folderBuildAll.title%"
       },
       {
         "command": "dagorProjectManager.folderOpenDaViewer",
-        "title": "Open daViewer"
+        "title": "%command.folderOpenDaViewer.title%"
       },
       {
         "command": "dagorProjectManager.folderOpenScene",
-        "title": "Open Scene"
+        "title": "%command.folderOpenScene.title%"
       },
       {
         "command": "dagorProjectManager.folderRunGame",
-        "title": "Run Game"
+        "title": "%command.folderRunGame.title%"
       },
       {
         "command": "dagorProjectManager.folderRunCommand",
-        "title": "Run Command"
+        "title": "%command.folderRunCommand.title%"
       },
       {
         "command": "dagorProjectManager.folderCreateCommand",
-        "title": "Create Command"
+        "title": "%command.folderCreateCommand.title%"
       },
       {
         "command": "dagorProjectManager.folderCreateScene",
-        "title": "Create Scene"
+        "title": "%command.folderCreateScene.title%"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "dagorProjectManager",
-          "title": "Dagor Project Manager",
+          "title": "%activitybar.title%",
           "icon": "media/dagor.svg"
         }
       ]
@@ -168,7 +168,7 @@
       "dagorProjectManager": [
         {
           "id": "dagorProjectManager.projects",
-          "name": "Projects",
+          "name": "%view.projects.name%",
           "icon": "media/dagor.svg",
           "type": "webview"
         }
@@ -374,40 +374,40 @@
     "submenus": [
       {
         "id": "dagorProjectManager.projectFolderContext",
-        "label": "Dagor Project Manager"
+        "label": "%submenu.projectFolderContext.label%"
       },
       {
         "id": "dagorProjectManager.blkContext",
-        "label": "Dagor Project Manager"
+        "label": "%submenu.blkContext.label%"
       }
     ],
     "configuration": {
-      "title": "Dagor Project Manager",
+      "title": "%configuration.title%",
       "properties": {
         "dagorProjectManager.toolsDirectory": {
           "type": "string",
           "default": "",
-          "description": "Directory containing Dagor CDK executables. Defaults to DAGOR_CDK_DIR or this repository's tools/dagor_cdk folder."
+          "description": "%configuration.toolsDirectory.description%"
         },
         "dagorProjectManager.daEditorExecutable": {
           "type": "string",
           "default": "daEditor3x-dev.exe",
-          "description": "daEditor executable name or absolute path."
+          "description": "%configuration.daEditorExecutable.description%"
         },
         "dagorProjectManager.daViewerExecutable": {
           "type": "string",
           "default": "assetViewer2-dev.exe",
-          "description": "daViewer (Asset Viewer) executable name or absolute path."
+          "description": "%configuration.daViewerExecutable.description%"
         },
         "dagorProjectManager.blkEditorExecutable": {
           "type": "string",
           "default": "blkEditor-dev.exe",
-          "description": "blkEditor executable name or absolute path."
+          "description": "%configuration.blkEditorExecutable.description%"
         },
         "dagorProjectManager.pythonExecutable": {
           "type": "string",
           "default": "python",
-          "description": "Python executable used to run the project's build.py script."
+          "description": "%configuration.pythonExecutable.description%"
         }
       }
     }
