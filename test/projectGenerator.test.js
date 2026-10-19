@@ -65,13 +65,17 @@ test('discovers zero, one, multiple, and configured engine roots', t => {
 test('rejects invalid names and an occupied destination without changing it', t => {
   const { engineRoot, templateRoot } = fixture(t);
   for (const projectName of ['', '.', '..', 'two/parts', 'two\\parts', '_leading']) {
-    assert.throws(() => createProject({ projectName, engineRoot, templateRoot }), /project name/i);
+    assert.throws(() => createProject({ projectName, engineRoot, templateRoot }), error =>
+      /project name/i.test(error.message) && error.code === 'DAGOR_PROJECT_GENERATOR_INVALID_NAME'
+    );
   }
 
   const existing = path.join(engineRoot, 'AlreadyThere');
   fs.mkdirSync(existing);
   fs.writeFileSync(path.join(existing, 'keep.txt'), 'keep');
-  assert.throws(() => createProject({ projectName: 'AlreadyThere', engineRoot, templateRoot }), /already exists/i);
+  assert.throws(() => createProject({ projectName: 'AlreadyThere', engineRoot, templateRoot }), error =>
+    /already exists/i.test(error.message) && error.code === 'DAGOR_PROJECT_GENERATOR_DESTINATION_EXISTS'
+  );
   assert.equal(fs.readFileSync(path.join(existing, 'keep.txt'), 'utf8'), 'keep');
 });
 

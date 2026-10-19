@@ -10,6 +10,7 @@ const test = require('node:test');
 const { afterEach } = test;
 const extensionManifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 const packageNls = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.nls.json'), 'utf8'));
+const runtimeRussian = JSON.parse(fs.readFileSync(path.join(__dirname, '../l10n/bundle.l10n.ru.json'), 'utf8'));
 const resolvePackageString = value => value.replace(/%([\w.-]+)%/g, (match, key) => packageNls[key] ?? match);
 
 const commands = new Map();
@@ -37,6 +38,8 @@ let modalChoice;
 let warningPrompts = [];
 const warningResponses = [];
 let deleteTrashError;
+let runtimeTranslations = {};
+let runtimeLanguage = 'en';
 const terminals = [];
 const openedDocuments = [];
 const shownDocuments = [];
@@ -60,6 +63,14 @@ class FakeOutputChannel {
 }
 
 const vscode = {
+  env: { get language() { return runtimeLanguage; } },
+  l10n: {
+    t(message, args = {}) {
+      const template = runtimeTranslations[message] || message;
+      const values = Array.isArray(args) ? args : args;
+      return template.replace(/\{([\w]+)\}/g, (match, key) => values[key] ?? match);
+    }
+  },
   EventEmitter: FakeEventEmitter,
   Uri: { file: fsPath => ({
     scheme: 'file',
@@ -281,6 +292,8 @@ afterEach(() => {
   quickPicks.length = 0;
   deleteRequests.length = 0;
   warningPrompts = [];
+  runtimeTranslations = {};
+  runtimeLanguage = 'en';
   modalChoice = undefined;
   warningResponses.length = 0;
   deleteTrashError = undefined;
@@ -805,6 +818,20 @@ test('shows the no-project message after a completed search with no matches', as
     sceneFiles = previousSceneFiles;
     await refreshCatalog();
   }
+});
+
+test('renders Russian webview copy and exposes translated build-state labels', async () => {
+  runtimeTranslations = runtimeRussian;
+  runtimeLanguage = 'ru';
+  await refreshCatalog();
+  await webviewView.webview.send({ type: 'selectProject', project: applicationFile });
+
+  assert.match(webviewView.webview.html, /<html lang="ru">/);
+  assert.ok(webviewView.webview.html.includes('Обновить'));
+  assert.match(webviewView.webview.html, /Создать проект/);
+  assert.match(webviewView.webview.html, /data-build-label="Собрать" data-stop-build-label="Остановить сборку"/);
+  assert.match(webviewView.webview.html, /Открыть сцену/);
+  assert.match(webviewView.webview.html, /Запустить игру/);
 });
 
 test('runs selected components for the project from the webview', async () => {

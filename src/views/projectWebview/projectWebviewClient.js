@@ -121,7 +121,7 @@ const blockButtonsFor2s=()=>{
           actions.dataset.running=String(message.running);
           const submit=actions.querySelector('.build-submit');
           submit.classList.toggle('running',message.running);
-          submit.querySelector('.build-label').textContent=message.running?'Stop Build':'Build';
-          submit.setAttribute('aria-label',message.running?'Stop Build':'Build');
+          submit.querySelector('.build-label').textContent=message.running?submit.dataset.stopBuildLabel:submit.dataset.buildLabel;
+          submit.setAttribute('aria-label',message.running?submit.dataset.stopBuildLabel:submit.dataset.buildLabel);
         });
         window.addEventListener('load',()=>vscode.postMessage({type:'ready'}));

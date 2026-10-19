@@ -19,7 +19,9 @@
     "Other"
   ],
   "main": "./src/extension.js",
+  "l10n": "./l10n",
   "scripts": {
+    "extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
     "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js"
   },
   "contributes": {
@@ -411,5 +413,8 @@
         }
       }
     }
+  },
+  "devDependencies": {
+    "@vscode/l10n-dev": "^0.0.35"
   }
 }

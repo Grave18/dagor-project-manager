@@ -1,5 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs/promises');
+const vscode = require('vscode');
 
 function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) {
   const vscode = vscodeApi;
@@ -32,14 +33,14 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
 
   async function findProjectForFolder(folderUri) {
     if (!folderUri || folderUri.scheme !== 'file') {
-      vscode.window.showErrorMessage('Select a local Dagor project folder in the VS Code Explorer.');
+      vscode.window.showErrorMessage(vscode.l10n.t('Select a local Dagor project folder in the VS Code Explorer.'));
       return undefined;
     }
 
     try {
       await catalog.refresh();
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to find Dagor projects: ${error.message}`);
+      vscode.window.showErrorMessage(vscode.l10n.t('Failed to find Dagor projects: {error}', { error: error.message }));
       return undefined;
     }
 
@@ -58,19 +59,19 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
           description: path.relative(folder, project.root),
           project
         })),
-        { placeHolder: 'Select a Dagor project in this folder', matchOnDescription: true }
+        { placeHolder: vscode.l10n.t('Select a Dagor project in this folder'), matchOnDescription: true }
       );
       return selection?.project;
     }
 
-    vscode.window.showErrorMessage(`No Dagor project found in or under ${folder}.`);
+    vscode.window.showErrorMessage(vscode.l10n.t('No Dagor project found in or under {folder}.', { folder }));
     return undefined;
   }
 
   function runProjectGame(project, executable) {
     const game = project.games.find(item => item.executable === executable);
     if (!game) {
-      vscode.window.showErrorMessage('Select a valid game executable for this project.');
+      vscode.window.showErrorMessage(vscode.l10n.t('Select a valid game executable for this project.'));
       return;
     }
     toolRunner.launch(game.executable, [], path.join(project.root, 'game'), { detached: false, windowsHide: false });
@@ -79,11 +80,11 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
   function runProjectGameCommand(project, commandPath) {
     const command = project.gameCommands.find(item => item.command === commandPath);
     if (!command) {
-      vscode.window.showErrorMessage('Select a valid game command for this project.');
+      vscode.window.showErrorMessage(vscode.l10n.t('Select a valid game command for this project.'));
       return;
     }
     const terminal = vscode.window.createTerminal({
-      name: `Dagor: ${command.label}`,
+      name: vscode.l10n.t('Dagor: {command}', { command: command.label }),
       cwd: path.join(project.root, 'game'),
       shellPath: process.env.ComSpec || 'cmd.exe'
     });
@@ -145,13 +146,13 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
   async function runProjectSceneInGame(project, scenePath) {
     const scene = project?.scenes.find(item => item.uri.fsPath === scenePath);
     if (!scene) {
-      vscode.window.showErrorMessage('Select a valid scene for this project.');
+      vscode.window.showErrorMessage(vscode.l10n.t('Select a valid scene for this project.'));
       return;
     }
 
     const gameSceneConfig = await findGameSceneConfig(project, scene);
     if (!gameSceneConfig) {
-      vscode.window.showErrorMessage(`No game scene configuration found for ${scene.label}.`);
+      vscode.window.showErrorMessage(vscode.l10n.t('No game scene configuration found for {scene}.', { scene: scene.label }));
       return;
     }
 
@@ -168,13 +169,13 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
         path.basename(game.executable).toLowerCase() === matchingCommand.executableName?.toLowerCase()
       )?.executable;
       if (!executable) {
-        vscode.window.showErrorMessage(`Game executable from ${matchingCommand.label} was not found.`);
+        vscode.window.showErrorMessage(vscode.l10n.t('Game executable from {command} was not found.', { command: matchingCommand.label }));
         return;
       }
       args = matchingCommand.launchArgs;
     } else {
       if (project.games.length === 0) {
-        vscode.window.showErrorMessage(`No game executable found for ${project.label}.`);
+        vscode.window.showErrorMessage(vscode.l10n.t('No game executable found for {project}.', { project: project.label }));
         return;
       }
       let game = project.games[0];
@@ -185,7 +186,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
             description: path.relative(project.root, item.executable),
             executable: item.executable
           })),
-          { placeHolder: `Select a game to run ${scene.label}` }
+          { placeHolder: vscode.l10n.t('Select a game to run {scene}', { scene: scene.label }) }
         );
         if (!selection) return;
         game = selection;
@@ -199,7 +200,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
 
   async function pickProjectItem(items, placeHolder) {
     if (items.length === 0) {
-      vscode.window.showInformationMessage(`No entries available. ${placeHolder}.`);
+      vscode.window.showInformationMessage(vscode.l10n.t('No entries available. {placeHolder}.', { placeHolder }));
       return undefined;
     }
     return vscode.window.showQuickPick(items, { placeHolder, matchOnDescription: true });
@@ -208,7 +209,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
   async function openProjectScene(project) {
     const selection = await pickProjectItem(
       project.scenes.map(scene => ({ label: scene.label, description: scene.relativePath, uri: scene.uri })),
-      `Select a scene in ${project.label}`
+      vscode.l10n.t('Select a scene in {project}', { project: project.label })
     );
     if (selection) await toolRunner.openSceneInDaEditor(selection.uri);
   }
@@ -220,7 +221,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
         description: path.relative(project.root, game.executable),
         executable: game.executable
       })),
-      `Select a game to run in ${project.label}`
+      vscode.l10n.t('Select a game to run in {project}', { project: project.label })
     );
     if (selection) runProjectGame(project, selection.executable);
   }
@@ -232,18 +233,18 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
         description: path.relative(project.root, command.command),
         command: command.command
       })),
-      `Select a command to run in ${project.label}`
+      vscode.l10n.t('Select a command to run in {project}', { project: project.label })
     );
     if (selection) runProjectGameCommand(project, selection.command);
   }
 
   async function createProjectGameCommand(project) {
     const name = await vscode.window.showInputBox({
-      prompt: `Enter a name for a command in ${project.label}`,
+      prompt: vscode.l10n.t('Enter a name for a command in {project}', { project: project.label }),
       placeHolder: 'my-command',
       validateInput: value => /^[A-Za-z0-9][A-Za-z0-9 _-]*$/.test(value.trim())
         ? undefined
-        : 'Use letters, numbers, spaces, underscores, or hyphens; the name must start with a letter or number.'
+        : vscode.l10n.t('Use letters, numbers, spaces, underscores, or hyphens; the name must start with a letter or number.')
     });
     if (name === undefined) return;
 
@@ -254,7 +255,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       await fs.writeFile(commandPath, '', { flag: 'wx' });
     } catch (error) {
       if (error.code !== 'EEXIST') {
-        vscode.window.showErrorMessage(`Failed to create command file: ${error.message}`);
+        vscode.window.showErrorMessage(vscode.l10n.t('Failed to create command file: {error}', { error: error.message }));
         return;
       }
     }
@@ -263,24 +264,24 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       const document = await vscode.workspace.openTextDocument(vscode.Uri.file(commandPath));
       await vscode.window.showTextDocument(document);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to open command file: ${error.message}`);
+      vscode.window.showErrorMessage(vscode.l10n.t('Failed to open command file: {error}', { error: error.message }));
     }
   }
 
   async function createProjectScene(project) {
     const name = await vscode.window.showInputBox({
-      prompt: `Enter a name for a scene in ${project.label}`,
+      prompt: vscode.l10n.t('Enter a name for a scene in {project}', { project: project.label }),
       placeHolder: 'my-scene',
       validateInput: value => /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(value.trim())
         ? undefined
-        : 'Use letters, numbers, underscores, or hyphens; the name must start with a letter or number.'
+        : vscode.l10n.t('Use letters, numbers, underscores, or hyphens; the name must start with a letter or number.')
     });
     if (name === undefined) return;
 
     const sceneType = await vscode.window.showQuickPick([
-      { label: 'Empty Scene', description: 'Create the level structure without objects.', value: 'empty' },
-      { label: 'From Template', description: 'Create a scene with a plane and a cube.', value: 'template' }
-    ], { placeHolder: `Choose a starting point for ${name.trim()}` });
+      { label: vscode.l10n.t('Empty Scene'), description: vscode.l10n.t('Create the level structure without objects.'), value: 'empty' },
+      { label: vscode.l10n.t('From Template'), description: vscode.l10n.t('Create a scene with a plane and a cube.'), value: 'template' }
+    ], { placeHolder: vscode.l10n.t('Choose a starting point for {name}', { name: name.trim() }) });
     if (!sceneType) return;
 
     const sceneName = name.trim();
@@ -288,7 +289,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
     try {
       projectRoot = await fs.realpath(project.root);
     } catch (error) {
-      vscode.window.showErrorMessage(`Cannot safely resolve the project folder: ${error.message}`);
+      vscode.window.showErrorMessage(vscode.l10n.t('Cannot safely resolve the project folder: {error}', { error: error.message }));
       return;
     }
     let levelsDirectory = projectRoot;
@@ -298,7 +299,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
         await fs.mkdir(levelsDirectory);
       } catch (error) {
         if (error.code !== 'EEXIST') {
-          vscode.window.showErrorMessage(`Failed to create scene folder: ${error.message}`);
+          vscode.window.showErrorMessage(vscode.l10n.t('Failed to create scene folder: {error}', { error: error.message }));
           return;
         }
       }
@@ -306,11 +307,11 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
         const directoryInfo = await fs.lstat(levelsDirectory);
         const realDirectory = await fs.realpath(levelsDirectory);
         if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || !isPathWithin(projectRoot, realDirectory)) {
-          vscode.window.showErrorMessage(`Cannot create a scene because ${path.relative(projectRoot, levelsDirectory)} is not a regular folder inside the project.`);
+          vscode.window.showErrorMessage(vscode.l10n.t('Cannot create a scene because {folder} is not a regular folder inside the project.', { folder: path.relative(projectRoot, levelsDirectory) }));
           return;
         }
       } catch (error) {
-        vscode.window.showErrorMessage(`Cannot safely inspect the scene folder: ${error.message}`);
+        vscode.window.showErrorMessage(vscode.l10n.t('Cannot safely inspect the scene folder: {error}', { error: error.message }));
         return;
       }
     }
@@ -321,8 +322,8 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       await fs.mkdir(sceneDirectory);
     } catch (error) {
       const message = error.code === 'EEXIST'
-        ? `A scene folder already exists: ${sceneDirectory}`
-        : `Failed to create scene folder: ${error.message}`;
+        ? vscode.l10n.t('A scene folder already exists: {folder}', { folder: sceneDirectory })
+        : vscode.l10n.t('Failed to create scene folder: {error}', { error: error.message });
       vscode.window.showErrorMessage(message);
       return;
     }
@@ -349,7 +350,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
           const source = path.join(templateDirectory, sourceRelative);
           const sourceInfo = await fs.lstat(source);
           if (!sourceInfo.isFile() || sourceInfo.isSymbolicLink()) {
-            throw new Error(`Scene template file is missing or invalid: ${sourceRelative}`);
+            throw new Error(vscode.l10n.t('Scene template file is missing or invalid: {path}', { path: sourceRelative }));
           }
           let contents = (await fs.readFile(source, 'utf8')).split('__PROJECT_NAME__').join(sceneName);
           if (path.basename(destination).endsWith('.level.blk') && sceneExportDirectory !== undefined) {
@@ -363,7 +364,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       }
     } catch (error) {
       await fs.rm(sceneDirectory, { recursive: true, force: true }).catch(() => {});
-      vscode.window.showErrorMessage(`Failed to create scene: ${error.message}`);
+      vscode.window.showErrorMessage(vscode.l10n.t('Failed to create scene: {error}', { error: error.message }));
       return;
     }
 
@@ -372,7 +373,7 @@ function createProjectActions({ vscodeApi, catalog, toolRunner, buildManager }) 
       const document = await vscode.workspace.openTextDocument(vscode.Uri.file(levelPath));
       await vscode.window.showTextDocument(document);
     } catch (error) {
-      vscode.window.showErrorMessage(`Scene was created but could not be opened: ${error.message}`);
+      vscode.window.showErrorMessage(vscode.l10n.t('Scene was created but could not be opened: {error}', { error: error.message }));
     }
   }
 

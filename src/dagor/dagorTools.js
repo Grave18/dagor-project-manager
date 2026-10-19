@@ -11,11 +11,11 @@ function resolveExecutable(configuredPath, toolsDirectory, settingName) {
       : undefined;
 
   if (!executablePath) {
-    throw new Error(`Set dagorProjectManager.toolsDirectory or configure an absolute path for ${settingName}.`);
+    throw new Error(vscode.l10n.t('Set dagorProjectManager.toolsDirectory or configure an absolute path for {setting}.', { setting: settingName }));
   }
 
   if (!fs.existsSync(executablePath)) {
-    throw new Error(`Cannot find ${settingName}: ${executablePath}`);
+    throw new Error(vscode.l10n.t('Cannot find {setting}: {path}', { setting: settingName, path: executablePath }));
   }
 
   return executablePath;
@@ -68,20 +68,20 @@ function launch(executablePath, args, cwd, options = {}) {
   });
 
   child.once('error', error => {
-    vscode.window.showErrorMessage(`Failed to start Dagor tool: ${error.message}`);
+    vscode.window.showErrorMessage(vscode.l10n.t('Failed to start Dagor tool: {error}', { error: error.message }));
   });
   child.unref();
 }
 
 async function runTool(fileUri, kind) {
   if (!fileUri || fileUri.scheme !== 'file') {
-    vscode.window.showErrorMessage('Select a local .blk file in the VS Code Explorer.');
+    vscode.window.showErrorMessage(vscode.l10n.t('Select a local .blk file in the VS Code Explorer.'));
     return;
   }
 
   const selectedFile = fileUri.fsPath;
   if (path.extname(selectedFile).toLowerCase() !== '.blk') {
-    vscode.window.showErrorMessage('The selected file is not a .blk file.');
+    vscode.window.showErrorMessage(vscode.l10n.t('The selected file is not a .blk file.'));
     return;
   }
 
@@ -90,7 +90,7 @@ async function runTool(fileUri, kind) {
   const toolsDirectory = config.get('toolsDirectory') || process.env.DAGOR_CDK_DIR ||
     (workspaceRoot ? findToolsDirectory(workspaceRoot) : undefined);
   if (!toolsDirectory) {
-    vscode.window.showErrorMessage('Set dagorProjectManager.toolsDirectory or the DAGOR_CDK_DIR environment variable.');
+    vscode.window.showErrorMessage(vscode.l10n.t('Set dagorProjectManager.toolsDirectory or the DAGOR_CDK_DIR environment variable.'));
     return;
   }
 
@@ -101,35 +101,35 @@ async function runTool(fileUri, kind) {
     let cwd = path.dirname(selectedFile);
 
     if (kind === 'blkEditor') {
-      executablePath = resolveExecutable(config.get('blkEditorExecutable'), toolsDirectory, 'blkEditor executable');
+      executablePath = resolveExecutable(config.get('blkEditorExecutable'), toolsDirectory, vscode.l10n.t('blkEditor executable'));
       args = [selectedFile];
     } else if (kind === 'daViewer') {
       if (fileName !== 'application.blk') {
-        vscode.window.showErrorMessage('daViewer can be opened from application.blk.');
+        vscode.window.showErrorMessage(vscode.l10n.t('daViewer can be opened from application.blk.'));
         return;
       }
-      executablePath = resolveExecutable(config.get('daViewerExecutable'), toolsDirectory, 'daViewer executable');
+      executablePath = resolveExecutable(config.get('daViewerExecutable'), toolsDirectory, vscode.l10n.t('daViewer executable'));
       args = [selectedFile];
       cwd = path.dirname(selectedFile);
     } else {
-      executablePath = resolveExecutable(config.get('daEditorExecutable'), toolsDirectory, 'daEditor executable');
+      executablePath = resolveExecutable(config.get('daEditorExecutable'), toolsDirectory, vscode.l10n.t('daEditor executable'));
       if (fileName === 'application.blk') {
         args = [selectedFile];
         cwd = path.dirname(selectedFile);
       } else if (fileName.endsWith('.level.blk')) {
         if (!workspaceRoot) {
-          vscode.window.showErrorMessage('Open the project folder in VS Code before opening a level.');
+          vscode.window.showErrorMessage(vscode.l10n.t('Open the project folder in VS Code before opening a level.'));
           return;
         }
         const project = findProjectApplication(selectedFile, workspaceRoot);
         if (!project) {
-          vscode.window.showErrorMessage('Cannot find application.blk in the selected level folder or its parent folders.');
+          vscode.window.showErrorMessage(vscode.l10n.t('Cannot find application.blk in the selected level folder or its parent folders.'));
           return;
         }
         args = [project.applicationFile, selectedFile];
         cwd = project.projectRoot;
       } else {
-        vscode.window.showErrorMessage('daEditor is available for application.blk and *.level.blk files.');
+        vscode.window.showErrorMessage(vscode.l10n.t('daEditor is available for application.blk and *.level.blk files.'));
         return;
       }
     }
@@ -148,7 +148,7 @@ function getToolsDirectory(config) {
 async function openSceneInDaEditor(fileUri) {
   const root = vscode.workspace.getWorkspaceFolder(fileUri)?.uri.fsPath;
   if (!root) {
-    vscode.window.showErrorMessage('Open a Dagor project folder in VS Code first.');
+    vscode.window.showErrorMessage(vscode.l10n.t('Open a Dagor project folder in VS Code first.'));
     return;
   }
   await runTool(fileUri, 'daEditor');
@@ -156,7 +156,7 @@ async function openSceneInDaEditor(fileUri) {
 
 async function openProjectDaViewer(project) {
   if (!project?.applicationFile) {
-    vscode.window.showErrorMessage('Select a Dagor project in the sidebar.');
+    vscode.window.showErrorMessage(vscode.l10n.t('Select a Dagor project in the sidebar.'));
     return;
   }
   await runTool(vscode.Uri.file(project.applicationFile), 'daViewer');

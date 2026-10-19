@@ -55,3 +55,24 @@ test('renderer shows each discovery empty state', () => {
   assert.match(refreshing, /Searching for Dagor projects/);
   assert.match(failed, /Dagor project search failed/);
 });
+
+test('renderer uses localized webview copy and dynamic build labels', () => {
+  const project = makeProject();
+  const html = renderProjectWebview({
+    projects: [project], buildComponents: [], selectedProject: project.applicationFile,
+    strings: {
+      language: 'ru', refresh: 'Обновить', createProject: 'Создать проект',
+      buildProject: 'Собрать проект', selectComponents: 'Выберите компоненты:',
+      build: 'Сборка', stopBuild: 'Остановить сборку', openDaViewer: 'Открыть daViewer',
+      openScene: 'Открыть сцену', scenesLocation: 'Сцены находятся в develop/levels',
+      createScene: 'Создать сцену', runGame: 'Запустить игру',
+      gamesLocation: 'Исполняемые файлы игры находятся в game/', runCommand: 'Запустить команду',
+      commandsLocation: 'Файлы команд находятся в game/'
+    }
+  });
+
+  assert.match(html, /<html lang="ru">/);
+  assert.match(html, /Обновить/);
+  assert.match(html, /Создать проект/);
+  assert.match(html, /data-build-label="Сборка" data-stop-build-label="Остановить сборку"/);
+});

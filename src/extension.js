@@ -11,6 +11,43 @@ const { createSceneActions } = require('./scenes/sceneActions');
 const { createProject, findDagorEngineRoots } = require('./projects/projectGenerator');
 const PROJECT_FOLDERS_CONTEXT = 'dagorProjectManager.projectFolders';
 
+function localizeProjectGeneratorError(error) {
+  if (!error.code?.startsWith('DAGOR_PROJECT_GENERATOR_')) {
+    return vscode.l10n.t('Failed to create project: {error}', { error: error.message });
+  }
+  const args = error.l10nArgs || {};
+  switch (error.l10nMessage) {
+    case 'The bundled starter template is missing: {path}':
+      return vscode.l10n.t('The bundled starter template is missing: {path}', args);
+    case 'The bundled starter template is incomplete. Missing: {files}':
+      return vscode.l10n.t('The bundled starter template is incomplete. Missing: {files}', args);
+    case 'Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.':
+      return vscode.l10n.t('Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.');
+    case 'Template entry escapes the project folder: {path}':
+      return vscode.l10n.t('Template entry escapes the project folder: {path}', args);
+    case 'Template paths collide after name replacement: {path}':
+      return vscode.l10n.t('Template paths collide after name replacement: {path}', args);
+    case 'The bundled starter template contains an unsupported symbolic link: {path}':
+      return vscode.l10n.t('The bundled starter template contains an unsupported symbolic link: {path}', args);
+    case 'The bundled starter template contains an unsupported file type: {path}':
+      return vscode.l10n.t('The bundled starter template contains an unsupported file type: {path}', args);
+    case 'Generated project is missing required file: {path}':
+      return vscode.l10n.t('Generated project is missing required file: {path}', args);
+    case 'Template marker remains in generated path: {path}':
+      return vscode.l10n.t('Template marker remains in generated path: {path}', args);
+    case 'Template marker remains in generated file: {path}':
+      return vscode.l10n.t('Template marker remains in generated file: {path}', args);
+    case 'Failed to initialize the project Git repository: {error}':
+      return vscode.l10n.t('Failed to initialize the project Git repository: {error}', args);
+    case 'The selected folder is not a DagorEngine root: {path}':
+      return vscode.l10n.t('The selected folder is not a DagorEngine root: {path}', args);
+    case 'A project folder already exists: {path}':
+      return vscode.l10n.t('A project folder already exists: {path}', args);
+    default:
+      return vscode.l10n.t('Failed to create project: {error}', { error: error.message });
+  }
+}
+
 function activate(context) {
   for (const [command, kind] of [
     ['dagorProjectManager.openWithBlkEditor', 'blkEditor'],
@@ -36,7 +73,7 @@ function activate(context) {
     );
     vscode.commands.executeCommand('setContext', PROJECT_FOLDERS_CONTEXT, projectFolders)
       .then(undefined, error => {
-        vscode.window.showErrorMessage(`Failed to update Dagor project folder menu: ${error.message}`);
+        vscode.window.showErrorMessage(vscode.l10n.t('Failed to update Dagor project folder menu: {error}', { error: error.message }));
       });
   }));
   const outputChannel = vscode.window.createOutputChannel('Dagor Project Manager');
@@ -111,7 +148,7 @@ function activate(context) {
     const workspaceRoots = (vscode.workspace.workspaceFolders || []).map(folder => folder.uri.fsPath);
     const engineRoots = findDagorEngineRoots(workspaceRoots, configuredToolsDirectory);
     if (engineRoots.length === 0) {
-      vscode.window.showErrorMessage('Cannot find DagorEngine. Open a folder inside DagorEngine or set dagorProjectManager.toolsDirectory.');
+      vscode.window.showErrorMessage(vscode.l10n.t('Cannot find DagorEngine. Open a folder inside DagorEngine or set dagorProjectManager.toolsDirectory.'));
       return;
     }
 
@@ -121,17 +158,17 @@ function activate(context) {
         label: path.basename(root),
         description: root,
         root
-      })), { placeHolder: 'Select the DagorEngine folder for the new project' });
+      })), { placeHolder: vscode.l10n.t('Select the DagorEngine folder for the new project') });
       if (!selectedRoot) return;
       engineRoot = selectedRoot.root;
     }
 
     const projectName = await vscode.window.showInputBox({
-      prompt: 'Enter a name for the new Dagor project',
+      prompt: vscode.l10n.t('Enter a name for the new Dagor project'),
       placeHolder: 'MyProject',
       validateInput: value => /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(value)
         ? undefined
-        : 'Use a letter or number first, then only letters, numbers, underscores, or hyphens.'
+        : vscode.l10n.t('Use a letter or number first, then only letters, numbers, underscores, or hyphens.')
     });
     if (projectName === undefined) return;
 
@@ -156,9 +193,9 @@ function activate(context) {
           running
         });
       });
-      vscode.window.showInformationMessage(`Dagor project created; editor shader and asset builds started: ${result.projectRoot}`);
+      vscode.window.showInformationMessage(vscode.l10n.t('Dagor project created; editor shader and asset builds started: {path}', { path: result.projectRoot }));
     } catch (error) {
-      vscode.window.showErrorMessage(error.message);
+      vscode.window.showErrorMessage(localizeProjectGeneratorError(error));
     }
   }));
 

@@ -6,6 +6,28 @@ const { spawnSync } = require('node:child_process');
 
 const PROJECT_MARKER = '__PROJECT_NAME__';
 const PROJECT_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const PROJECT_ERROR_CODES = {
+  'The bundled starter template is missing: {path}': 'TEMPLATE_MISSING',
+  'The bundled starter template is incomplete. Missing: {files}': 'TEMPLATE_INCOMPLETE',
+  'Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.': 'INVALID_NAME',
+  'Template entry escapes the project folder: {path}': 'TEMPLATE_PATH_ESCAPE',
+  'Template paths collide after name replacement: {path}': 'TEMPLATE_PATH_COLLISION',
+  'The bundled starter template contains an unsupported symbolic link: {path}': 'TEMPLATE_SYMLINK',
+  'The bundled starter template contains an unsupported file type: {path}': 'TEMPLATE_FILE_TYPE',
+  'Generated project is missing required file: {path}': 'GENERATED_FILE_MISSING',
+  'Template marker remains in generated path: {path}': 'UNRESOLVED_PATH_MARKER',
+  'Template marker remains in generated file: {path}': 'UNRESOLVED_FILE_MARKER',
+  'Failed to initialize the project Git repository: {error}': 'GIT_INIT_FAILED',
+  'The selected folder is not a DagorEngine root: {path}': 'INVALID_ENGINE_ROOT',
+  'A project folder already exists: {path}': 'DESTINATION_EXISTS'
+};
+function createProjectError(message, l10nMessage, l10nArgs = {}) {
+  const error = new Error(message);
+  error.code = `DAGOR_PROJECT_GENERATOR_${PROJECT_ERROR_CODES[l10nMessage] || 'UNKNOWN'}`;
+  error.l10nMessage = l10nMessage;
+  error.l10nArgs = l10nArgs;
+  return error;
+}
 const TEXT_EXTENSIONS = new Set([
   '.blk', '.py', '.jam', '.cmd', '.das', '.txt', '.json', '.xml'
 ]);
@@ -54,7 +76,8 @@ function findDagorEngineRoots(workspaceRoots = [], configuredToolsDirectory) {
 
 function validateTemplate(templateRoot) {
   if (!templateRoot || !fs.existsSync(templateRoot) || !fs.statSync(templateRoot).isDirectory()) {
-    throw new Error(`The bundled starter template is missing: ${templateRoot || '(empty path)'}`);
+    const template = templateRoot || '(empty path)';
+    throw createProjectError(`The bundled starter template is missing: ${template}`, 'The bundled starter template is missing: {path}', { path: template });
   }
   const required = [
     'application.blk',
@@ -78,13 +101,13 @@ function validateTemplate(templateRoot) {
   ];
   const missing = required.filter(relative => !fs.existsSync(path.join(templateRoot, relative)));
   if (missing.length) {
-    throw new Error(`The bundled starter template is incomplete. Missing: ${missing.join(', ')}`);
+    throw createProjectError(`The bundled starter template is incomplete. Missing: ${missing.join(', ')}`, 'The bundled starter template is incomplete. Missing: {files}', { files: missing.join(', ') });
   }
 }
 
 function validateProjectName(projectName) {
   if (typeof projectName !== 'string' || !PROJECT_NAME_PATTERN.test(projectName)) {
-    throw new Error('Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.');
+    throw createProjectError('Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.', 'Project name must start with a letter or number and contain only letters, numbers, underscores, or hyphens.');
   }
 }
 
@@ -104,13 +127,13 @@ function copyTemplate(templateRoot, projectRoot, projectName) {
       const normalizedDestination = path.normalize(relativeDestination);
       if (path.isAbsolute(relativeDestination) || normalizedDestination === '..' ||
           normalizedDestination.startsWith(`..${path.sep}`)) {
-        throw new Error(`Template entry escapes the project folder: ${relativeSource}`);
+        throw createProjectError(`Template entry escapes the project folder: ${relativeSource}`, 'Template entry escapes the project folder: {path}', { path: relativeSource });
       }
       // Windows paths are case-insensitive, so catch collisions even when the
       // template's source entries differ only by letter case.
       const collisionKey = normalizedDestination.toLocaleLowerCase('en-US');
       if (collisionKeys.has(collisionKey)) {
-        throw new Error(`Template paths collide after name replacement: ${normalizedDestination}`);
+        throw createProjectError(`Template paths collide after name replacement: ${normalizedDestination}`, 'Template paths collide after name replacement: {path}', { path: normalizedDestination });
       }
       collisionKeys.add(collisionKey);
       mappedEntries.add(normalizedDestination);
@@ -118,7 +141,7 @@ function copyTemplate(templateRoot, projectRoot, projectName) {
       const sourcePath = path.join(sourceDirectory, entry.name);
       const destinationPath = path.join(projectRoot, normalizedDestination);
       if (entry.isSymbolicLink()) {
-        throw new Error(`The bundled starter template contains an unsupported symbolic link: ${relativeSource}`);
+        throw createProjectError(`The bundled starter template contains an unsupported symbolic link: ${relativeSource}`, 'The bundled starter template contains an unsupported symbolic link: {path}', { path: relativeSource });
       }
       if (entry.isDirectory()) {
         fs.mkdirSync(destinationPath);
@@ -133,7 +156,7 @@ function copyTemplate(templateRoot, projectRoot, projectName) {
         }
         copiedFiles.push({ path: normalizedDestination, isText });
       } else {
-        throw new Error(`The bundled starter template contains an unsupported file type: ${relativeSource}`);
+        throw createProjectError(`The bundled starter template contains an unsupported file type: ${relativeSource}`, 'The bundled starter template contains an unsupported file type: {path}', { path: relativeSource });
       }
     }
   }
@@ -166,18 +189,18 @@ function validateGeneratedProject(projectRoot, projectName, mappedEntries, copie
   for (const relative of requiredFiles) {
     const filePath = path.join(projectRoot, relative);
     if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-      throw new Error(`Generated project is missing required file: ${relative}`);
+      throw createProjectError(`Generated project is missing required file: ${relative}`, 'Generated project is missing required file: {path}', { path: relative });
     }
   }
 
   for (const entry of mappedEntries) {
     if (entry.includes(PROJECT_MARKER)) {
-      throw new Error(`Template marker remains in generated path: ${entry}`);
+      throw createProjectError(`Template marker remains in generated path: ${entry}`, 'Template marker remains in generated path: {path}', { path: entry });
     }
   }
   for (const file of copiedFiles) {
     if (file.isText && fs.readFileSync(path.join(projectRoot, file.path), 'utf8').includes(PROJECT_MARKER)) {
-      throw new Error(`Template marker remains in generated file: ${file.path}`);
+      throw createProjectError(`Template marker remains in generated file: ${file.path}`, 'Template marker remains in generated file: {path}', { path: file.path });
     }
   }
 }
@@ -189,11 +212,12 @@ function initializeGitRepository(projectRoot) {
     windowsHide: true
   });
   if (result.error) {
-    throw new Error(`Failed to initialize the project Git repository: ${result.error.message}`);
+    throw createProjectError(`Failed to initialize the project Git repository: ${result.error.message}`, 'Failed to initialize the project Git repository: {error}', { error: result.error.message });
   }
   if (result.status !== 0) {
     const details = (result.stderr || result.stdout || '').trim();
-    throw new Error(`Failed to initialize the project Git repository${details ? `: ${details}` : ` (git exited with code ${result.status})`}`);
+    const detail = details || `git exited with code ${result.status}`;
+    throw createProjectError(`Failed to initialize the project Git repository${details ? `: ${details}` : ` (${detail})`}`, 'Failed to initialize the project Git repository: {error}', { error: detail });
   }
 }
 
@@ -201,7 +225,8 @@ function createProject({ projectName, engineRoot, templateRoot }) {
   validateProjectName(projectName);
   validateTemplate(templateRoot);
   if (!engineRoot || !fs.existsSync(engineRoot) || !fs.statSync(engineRoot).isDirectory() || !isEngineRoot(engineRoot)) {
-    throw new Error(`The selected folder is not a DagorEngine root: ${engineRoot || '(empty path)'}`);
+    const folder = engineRoot || '(empty path)';
+    throw createProjectError(`The selected folder is not a DagorEngine root: ${folder}`, 'The selected folder is not a DagorEngine root: {path}', { path: folder });
   }
 
   const canonicalEngineRoot = fs.realpathSync(engineRoot);
@@ -211,7 +236,7 @@ function createProject({ projectName, engineRoot, templateRoot }) {
     try { fs.lstatSync(projectRoot); destinationExists = true; } catch {}
   }
   if (destinationExists) {
-    throw new Error(`A project folder already exists: ${projectRoot}`);
+    throw createProjectError(`A project folder already exists: ${projectRoot}`, 'A project folder already exists: {path}', { path: projectRoot });
   }
 
   let destinationCreated = false;
