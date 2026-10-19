@@ -1,4 +1,3 @@
-const crypto = require('node:crypto');
 const path = require('node:path');
 
 const ICON_PATHS = {
@@ -42,8 +41,7 @@ function getProjectDisplayPath(project) {
 }
 
 
-function renderProjectWebview({ projects = [], buildComponents = [], selectedProject, selectedProjectRunning = false, isRefreshing = false, discoveryError, animation = {} }) {
-    const nonce = crypto.randomBytes(16).toString('hex');
+function renderProjectWebview({ projects = [], buildComponents = [], selectedProject, selectedProjectRunning = false, isRefreshing = false, discoveryError, animation = {}, assetUris = { css: '', client: '' }, cspSource = '' }) {
     const projectRows = projects.map(project => {
       const projectId = escapeHtml(project.applicationFile);
       const selected = selectedProject === project.applicationFile;
@@ -107,149 +105,9 @@ function renderProjectWebview({ projects = [], buildComponents = [], selectedPro
     }
 
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-      <meta name="viewport" content="width=device-width,initial-scale=1.0"><style>
-        :root{color-scheme:light dark}*{box-sizing:border-box}[hidden]{display:none!important}body{padding:6px 8px;color:var(--vscode-foreground);font:13px var(--vscode-font-family)}
-        .icon{display:block;width:16px;height:16px;flex:0 0 16px;stroke-width:1.8}.toolbar{display:flex;justify-content:flex-end;margin:0 0 2px}.icon-button{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;color:var(--vscode-foreground);background:transparent;border:1px solid transparent;border-radius:4px;font:inherit;cursor:pointer}.icon-button:hover{background:var(--vscode-button-hoverBackground,var(--vscode-button-background))}.icon-button:disabled,.action:disabled,.scene:disabled,.build-submit:disabled{opacity:0.5;cursor:not-allowed!important;filter:brightness(0.8)}.icon-button:disabled:hover,.action:disabled:hover,.scene:disabled:hover,.build-submit:disabled:hover{background:transparent!important}.icon-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
-        .project-row,.action,.scene,.build-submit{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-        .project-list{display:grid;gap:1px}.project-row{width:100%;display:flex;align-items:center;gap:7px;padding:3px 6px;text-align:left;border-radius:4px;min-height:25px;overflow:hidden}.project-row:hover,.project-row.selected{background:var(--vscode-list-hoverBackground)}
-        .project-name{font-weight:600}.project-row small,.scene small{margin-left:auto;color:var(--vscode-descriptionForeground);font-size:11px}.chevron-icon{width:16px;height:16px;flex:0 0 16px;color:var(--vscode-descriptionForeground);transform-origin:center}.chevron-icon.expanded,.end-chevron.expanded{transform:rotate(90deg)}.chevron-icon.animate-expand{animation:project-chevron-expand 260ms cubic-bezier(.2,.75,.25,1) both}.chevron-icon.animate-collapse{animation:project-chevron-collapse 260ms cubic-bezier(.2,.75,.25,1) both}@keyframes project-chevron-expand{0%{transform:rotate(0) scale(.85)}68%{transform:rotate(98deg) scale(1.08)}100%{transform:rotate(90deg) scale(1)}}@keyframes project-chevron-collapse{0%{transform:rotate(90deg) scale(1)}68%{transform:rotate(-8deg) scale(1.08)}100%{transform:rotate(0) scale(1)}}.project-icon{color:var(--vscode-charts-blue)}
-        .project-actions{margin:8px;padding:6px;border:1px solid var(--vscode-widget-border);border-radius:5px;display:block;overflow:hidden}.action-grid{display:grid;grid-template-columns:1fr;gap:3px 8px;align-items:start}.action-group{display:contents}.action-group>.action{grid-column:1}.action{display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;text-align:left;border-radius:4px;min-height:27px}.action:hover,.scene:hover{background:var(--vscode-list-hoverBackground)}.build-toggle{grid-column:1;font-weight:600;background:transparent}.build-toggle:hover{background:var(--vscode-list-hoverBackground)}
-        .components{display:none;width:100%;padding:7px;border:1px solid var(--vscode-widget-border);border-radius:5px}.components.visible{display:block}.caption{margin-bottom:5px;color:var(--vscode-descriptionForeground)}.component{display:flex;align-items:center;gap:7px;padding:2px 0}.component input{accent-color:var(--vscode-checkbox-background)}.build-submit{width:100%;margin-top:6px;padding:5px;background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-button-border, var(--vscode-contrastBorder));border-radius:4px}.build-submit:hover{background:var(--vscode-list-hoverBackground)}.build-submit.running,.build-toggle.running{background:#a83f48;color:#fff;border-color:#bc555d}.build-submit.running:hover,.build-toggle.running:hover{background:#bd4a54;filter:brightness(1.04)}.build-icon{display:inline-flex;vertical-align:middle}.build-stop-icon{display:none}.build-submit.running .build-start-icon{display:none}.build-submit.running .build-stop-icon{display:block}
-        .scene-group{grid-column:1 / -1;border-top:1px solid var(--vscode-widget-border);border-bottom:0}.scene-heading{font-weight:600}.end-chevron{display:inline-flex;margin-left:auto;transform-origin:center;transition:transform 220ms cubic-bezier(.2,.75,.25,1)}.scene-list,.game-list,.game-command-list{display:grid;padding-left:12px}.scene,.game,.game-command,.create-command{display:flex;align-items:center;gap:8px;width:100%;padding:5px 7px;text-align:left;border-radius:4px}.scene small{font-size:10px}.game-icon,.game-heading-icon,.command-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}.empty{padding:6px;color:var(--vscode-descriptionForeground)}
-        @media(prefers-reduced-motion:reduce){.chevron-icon.animate-expand,.chevron-icon.animate-collapse,.end-chevron{animation:none!important;transition:none!important}}
-        @media(max-width:560px){.action-grid{grid-template-columns:1fr}.components{grid-column:1;grid-row:auto}.project-row small,.scene small{display:none}}
-        .add-project-row{display:flex;justify-content:flex-start;margin:8px 0 8px;padding-top:6px;border-top:1px solid var(--vscode-widget-border)}.add-project-button{width:100%;display:flex;align-items:center;gap:7px;min-height:25px;padding:3px 6px;text-align:left;color:var(--vscode-foreground);background:transparent;border:0;border-radius:4px;font:inherit;cursor:pointer}.add-project-button:hover{background:var(--vscode-list-hoverBackground)}.add-project-button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}.add-project-button:disabled{opacity:0.5;cursor:not-allowed;filter:brightness(0.8)}.add-project-button:disabled:hover{background:transparent}.add-project-spacer{visibility:hidden}.add-project-label{font-weight:600}
-      </style></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${isRefreshing ? 'disabled' : ''}><span class="chevron-icon add-project-spacer" aria-hidden="true">${iconSvg('chevron')}</span><span class="project-icon">${iconSvg('folderPlus')}</span><span class="add-project-label">Create Project</span></button></div>${projectActions}</main>
-      <script nonce="${nonce}">
-        const vscode=acquireVsCodeApi();
-        const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let projectPanelAnimation;
-        const enteringPanel=document.querySelector('.project-actions.opening');
-        if(enteringPanel&&prefersReducedMotion){
-          enteringPanel.style.height='auto';
-          enteringPanel.classList.remove('opening');
-        }else if(enteringPanel&&enteringPanel.animate){
-          const fromHeight=enteringPanel.getBoundingClientRect().height;
-          const initialHeight=enteringPanel.style.height;
-          enteringPanel.style.height='auto';
-          const height=enteringPanel.getBoundingClientRect().height;
-          enteringPanel.style.height=initialHeight;
-          const expanding=height>=fromHeight;
-          const easing=expanding?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,1,1)';
-          const animation=enteringPanel.animate([{height:fromHeight+'px',opacity:0.96,transform:'translateY(0)'},{height:height+'px',opacity:1,transform:'translateY(0)'}],{duration:260,easing});
-          const content=enteringPanel.querySelector('.action-grid');
-          if(content&&content.animate){
-            const shift=expanding?-8:8;
-            content.animate([{opacity:0.7,transform:'translateY('+shift+'px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing});
-          }
-          animation.onfinish=()=>{enteringPanel.style.height='auto';enteringPanel.classList.remove('opening');};
-        }
-        const selectProject=projectId=>{
-          if(projectPanelAnimation){projectPanelAnimation.cancel();projectPanelAnimation=undefined;}
-          const panel=document.querySelector('.project-actions');
-          if(panel&&panel.dataset.project===projectId&&!prefersReducedMotion&&panel.animate){
-            const height=panel.getBoundingClientRect().height;
-            projectPanelAnimation=panel.animate([{height:height+'px',opacity:1,transform:'translateY(0)'},{height:'0px',opacity:0,transform:'translateY(-6px)'}],{duration:220,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'});
-            projectPanelAnimation.onfinish=()=>{projectPanelAnimation=undefined;vscode.postMessage({type:'toggleProject',project:projectId});};
-          }else if(panel&&panel.dataset.project===projectId){
-            vscode.postMessage({type:'toggleProject',project:projectId});
-          }else{
-            const fromHeight=panel?panel.getBoundingClientRect().height:0;
-            vscode.postMessage({type:'selectProject',project:projectId,fromHeight});
-          }
-        };
-        document.addEventListener('contextmenu',event=>{
-          const item=event.target.closest('[data-context-kind]');
-          vscode.postMessage({type:'setContextTarget',target:item?{
-            kind:item.dataset.contextKind,
-            project:item.dataset.contextProject,
-            path:item.dataset.contextPath
-          }:null});
-        },true);
-        const projectFor=element=>JSON.parse(element.closest('.project-actions').dataset.projectData);
-        document.getElementById('refresh').addEventListener('click',()=>{
-  if(document.getElementById('refresh').disabled)return;
-  vscode.postMessage({type:'refresh'});
-});
-document.getElementById('add-project').addEventListener('click',()=>{const button=document.getElementById('add-project');if(button.disabled)return;vscode.postMessage({type:'addProject'});});
-const blockButtonsFor2s=()=>{
-  const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command], .create-command, .create-scene');
-  buttons.forEach(btn=>btn.disabled=true);
-  setTimeout(()=>buttons.forEach(btn=>btn.disabled=false),5000);
-};
-        document.addEventListener('click',event=>{
-          const select=event.target.closest('[data-select]');if(select){selectProject(select.dataset.select);return;}
-          const scene=event.target.closest('[data-scene]');if(scene){vscode.postMessage({type:'openScene',project:projectFor(scene),scene:scene.dataset.scene});blockButtonsFor2s();return;}
-          const game=event.target.closest('[data-game]');if(game){vscode.postMessage({type:'runGame',project:projectFor(game),executable:game.dataset.game});blockButtonsFor2s();return;}
-          const gameCommand=event.target.closest('[data-game-command]');if(gameCommand){vscode.postMessage({type:'runGameCommand',project:projectFor(gameCommand),command:gameCommand.dataset.gameCommand});blockButtonsFor2s();return;}
-          const createCommand=event.target.closest('[data-create-command]');if(createCommand){if(createCommand.disabled)return;vscode.postMessage({type:'createGameCommand',project:projectFor(createCommand)});blockButtonsFor2s();return;}
-          const createScene=event.target.closest('[data-create-scene]');if(createScene){if(createScene.disabled)return;vscode.postMessage({type:'createScene',project:projectFor(createScene)});blockButtonsFor2s();return;}
-          const button=event.target.closest('[data-action]');if(!button)return;
-          if(button.dataset.action==='toggleScenes'||button.dataset.action==='toggleGames'||button.dataset.action==='toggleGameCommands'){
-            const content=button.nextElementSibling;
-            const expanding=content.hidden;
-            const group=button.closest('.scene-group');
-            const animate=group&&group.animate&&!prefersReducedMotion;
-            if(animate){
-              const fromHeight=group.getBoundingClientRect().height;
-              content.hidden=!expanding;
-              const height=group.getBoundingClientRect().height;
-              content.hidden=!content.hidden;
-              const animation=group.animate([{height:fromHeight+'px'},{height:height+'px'}],{duration:220,easing:expanding?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,1,1)'});
-              group.style.overflow='hidden';
-              animation.onfinish=()=>{
-                content.hidden=!expanding;
-                group.style.height='';
-                group.style.overflow='';
-              };
-            }else{
-              content.hidden=!expanding;
-            }
-            button.setAttribute('aria-expanded',String(expanding));
-            button.querySelector('.end-chevron').classList.toggle('expanded',expanding);
-            return;
-          }
-          if(button.dataset.action==='build'){
-            const actions=button.closest('.project-actions');
-            if(actions.dataset.running==='true'){
-              vscode.postMessage({type:'stopBuild',project:projectFor(button)});
-            }else{
-              const components=actions.querySelector('.components');
-              const visible=components.classList.toggle('visible');
-              button.setAttribute('aria-expanded',String(visible));
-            }
-            return;
-          }
-          if(button.dataset.action==='submitBuild'){
-            const actions=button.closest('.project-actions');
-            if(actions.dataset.running==='true'){
-              vscode.postMessage({type:'stopBuild',project:projectFor(button)});
-              return;
-            }
-            const components=[...actions.querySelectorAll('.component input:checked')].map(input=>input.value);
-            if(components.length===0)return;
-            vscode.postMessage({type:'action',action:'build',project:projectFor(button),components});
-            return;
-          }
-          const project=projectFor(button);
-          const action=button.dataset.action;
-          vscode.postMessage(action==='stop'?{type:'stopBuild',project}:{type:'action',action,project});
-          if(action!=='build'&&action!=='submitBuild')blockButtonsFor2s();
-        });
-        window.addEventListener('message',event=>{
-          const message=event.data;
-          if(message.type!=='buildState')return;
-          const actions=[...document.querySelectorAll('.project-actions')].find(item=>JSON.parse(item.dataset.projectData).applicationFile===message.project);
-          if(!actions)return;
-          actions.dataset.running=String(message.running);
-          const submit=actions.querySelector('.build-submit');
-          submit.classList.toggle('running',message.running);
-          submit.querySelector('.build-label').textContent=message.running?'Stop Build':'Build';
-          submit.setAttribute('aria-label',message.running?'Stop Build':'Build');
-        });
-        window.addEventListener('load',()=>vscode.postMessage({type:'ready'}));
-      </script></body></html>`;
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${escapeHtml(cspSource)} 'unsafe-inline'; script-src ${escapeHtml(cspSource)};">
+      <meta name="viewport" content="width=device-width,initial-scale=1.0"><link rel="stylesheet" href="${escapeHtml(assetUris.css)}"></head><body>      <main><div class="toolbar"><button type="button" id="refresh" class="icon-button" title="Refresh projects" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${isRefreshing ? 'disabled' : ''}>${iconSvg('refresh')} Refresh</button></div><div class="project-list">${projectRows || `<div class="empty">${emptyState}</div>`}</div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button" data-vscode-context='{"preventDefaultContextMenuItems":true}' ${isRefreshing ? 'disabled' : ''}><span class="chevron-icon add-project-spacer" aria-hidden="true">${iconSvg('chevron')}</span><span class="project-icon">${iconSvg('folderPlus')}</span><span class="add-project-label">Create Project</span></button></div>${projectActions}</main>
+      <script src="${escapeHtml(assetUris.client)}"></script></body></html>`;
 }
 
 module.exports = { renderProjectWebview };

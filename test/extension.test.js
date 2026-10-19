@@ -164,6 +164,8 @@ const vscode = {
           options: {},
           html: '',
           listeners: [],
+          cspSource: 'vscode-webview-resource:',
+          asWebviewUri(uri) { return { toString: () => `vscode-webview-resource:${uri.fsPath}` }; },
           onDidReceiveMessage(listener) { this.listeners.push(listener); return { dispose() {} }; },
           postMessage(message) {
             this.postedMessage = message;
@@ -259,7 +261,11 @@ fs.writeFileSync(folderFile, '');
 sceneFiles = [levelFile, secondLevelFile, outerSpaceLevelFile];
 applicationFiles = [applicationFile, outerSpaceApplication];
 
-const context = { subscriptions: [], extensionPath: path.resolve(__dirname, '..') };
+const context = {
+  subscriptions: [],
+  extensionPath: path.resolve(__dirname, '..'),
+  extensionUri: { fsPath: path.resolve(__dirname, '..') }
+};
 extension.activate(context);
 
 afterEach(() => {
@@ -348,6 +354,13 @@ test('registers Explorer commands and the Dagor webview sidebar', () => {
   ]);
   assert.ok(providers.has('dagorProjectManager.projects'));
   assert.equal(webviewView.webview.options.enableScripts, true);
+  assert.deepEqual(webviewView.webview.options.localResourceRoots.map(root => root.fsPath), [
+    path.join(context.extensionPath, 'src', 'views', 'projectWebview')
+  ]);
+  assert.match(webviewView.webview.html, /<link rel="stylesheet" href="vscode-webview-resource:/);
+  assert.match(webviewView.webview.html, /<script src="vscode-webview-resource:/);
+  assert.doesNotMatch(webviewView.webview.html, /<script nonce=/);
+  assert.match(webviewView.webview.html, /style-src vscode-webview-resource: 'unsafe-inline'; script-src vscode-webview-resource:/);
   assert.ok(watcherPatterns.includes('**/build.py'));
   assert.ok(!extensionManifest.contributes.menus['view/title']?.some(item => item.command === 'dagorProjectManager.refreshProjects'));
   assert.ok(extensionManifest.contributes.menus['explorer/context'].some(item =>
@@ -517,7 +530,7 @@ test('places Create Project below the project list, routes it, and refreshes aft
   await refreshCatalog();
   const html = webviewView.webview.html;
   assert.match(html, /<div class="project-list">[\s\S]*?<\/div><div class="add-project-row"><button type="button" id="add-project" class="add-project-button"[^>]*><span class="chevron-icon add-project-spacer" aria-hidden="true"><svg class="icon"[\s\S]*?<\/svg><\/span><span class="project-icon"><svg class="icon"[\s\S]*?<circle cx="18" cy="17" r="4" fill="var\(--vscode-sideBar-background, var\(--vscode-editor-background\)\)"\/><path d="M18 15v4m-2-2h4"\/><\/svg><\/span><span class="add-project-label">Create Project<\/span><\/button><\/div>/);
-  assert.match(html, /getElementById\('add-project'\)\.addEventListener\('click'/);
+  assert.match(fs.readFileSync(path.join(context.extensionPath, 'src', 'views', 'projectWebview', 'projectWebviewClient.js'), 'utf8'), /getElementById\('add-project'\)\.addEventListener\('click'/);
 
   fs.writeFileSync(path.join(tempDirectory, 'build_all.py'), '# engine marker');
   fs.mkdirSync(path.join(toolsDirectory, 'dagor_cdk'), { recursive: true });
@@ -683,15 +696,16 @@ test('opens a level with its project application.blk in daEditor', async () => {
 
 test('renders projects separately with only their own scenes', async () => {
   await refreshCatalog();
+  const css = fs.readFileSync(path.join(context.extensionPath, 'src', 'views', 'projectWebview', 'projectWebview.css'), 'utf8');
   assert.match(webviewView.webview.html, /project_stalker/);
   assert.match(webviewView.webview.html, /outerSpace/);
   assert.equal((webviewView.webview.html.match(/id="refresh"/g) || []).length, 1);
-  assert.match(webviewView.webview.html, /\.icon-button\{[^}]*color:var\(--vscode-foreground\)[^}]*background:transparent/);
-  assert.match(webviewView.webview.html, /\.game-icon,\.game-heading-icon,\.command-icon\{[^}]*color:inherit/);
-  assert.match(webviewView.webview.html, /\.scene-group\{[^}]*border-top:1px solid var\(--vscode-widget-border\);border-bottom:0\}/);
-  assert.match(webviewView.webview.html, /@keyframes project-chevron-expand/);
-  assert.match(webviewView.webview.html, /@keyframes project-chevron-collapse/);
-  assert.match(webviewView.webview.html, /\.end-chevron\{[^}]*transition:transform 220ms cubic-bezier/);
+  assert.match(css, /\.icon-button\{[^}]*color:var\(--vscode-foreground\)[^}]*background:transparent/);
+  assert.match(css, /\.game-icon,\.game-heading-icon,\.command-icon\{[^}]*color:inherit/);
+  assert.match(css, /\.scene-group\{[^}]*border-top:1px solid var\(--vscode-widget-border\);border-bottom:0\}/);
+  assert.match(css, /@keyframes project-chevron-expand/);
+  assert.match(css, /@keyframes project-chevron-collapse/);
+  assert.match(css, /\.end-chevron\{[^}]*transition:transform 220ms cubic-bezier/);
 
   await webviewView.webview.send({ type: 'selectProject', project: applicationFile });
   const expanded = webviewView.webview.html;
@@ -700,7 +714,7 @@ test('renders projects separately with only their own scenes', async () => {
   assert.match(expanded, /another/);
   assert.match(expanded, /Select components to build/);
   assert.match(expanded, /Open Scene/);
-  assert.match(expanded, /\[hidden\]\{display:none!important\}/);
+  assert.match(css, /\[hidden\]\{display:none!important\}/);
   assert.match(expanded, /data-action="toggleScenes"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="scene-list">/);
   assert.match(expanded, /data-action="toggleGames"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="game-list">/);
   assert.match(expanded, /data-action="toggleGameCommands"[^>]*aria-expanded="true"[^>]*>[\s\S]*?<div class="game-command-list">/);
@@ -730,7 +744,7 @@ test('renders projects separately with only their own scenes', async () => {
   assert.match(expanded, /class="command-icon"><svg class="icon"/);
   assert.match(expanded, /class="build-icon"><svg class="icon build-start-icon"/);
   assert.match(expanded, /class="icon build-stop-icon"/);
-  assert.match(expanded, /\.build-submit\.running \.build-start-icon\{display:none\}/);
+  assert.match(css, /\.build-submit\.running \.build-start-icon\{display:none\}/);
   assert.doesNotMatch(expanded, /[▶■⌘⟳❯🞃]/);
   assert.match(expanded, new RegExp(`data-project="${applicationFile.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*data-project-data=`));
   await webviewView.webview.send({ type: 'selectProject', project: outerSpaceApplication });

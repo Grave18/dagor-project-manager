@@ -41,7 +41,7 @@ function activate(context) {
   }));
   const outputChannel = vscode.window.createOutputChannel('Dagor Project Manager');
   context.subscriptions.push(outputChannel);
-  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneActions, outputChannel });
+  const provider = new ProjectWebviewProvider({ catalog, buildManager, actions, sceneActions, outputChannel, extensionUri: context.extensionUri });
   context.subscriptions.push(provider.disposable);
   context.subscriptions.push(vscode.commands.registerCommand('dagorProjectManager.revealContextTarget', () =>
     provider.revealContextTarget()));

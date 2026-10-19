@@ -1,16 +1,18 @@
 const path = require('node:path');
+const fs = require('node:fs');
 const vscode = require('vscode');
 const { BUILD_COMPONENTS } = require('../../build/buildManager');
 const { renderProjectWebview } = require('./renderProjectWebview');
 
 
 class ProjectWebviewProvider {
-  constructor({ catalog, buildManager, actions, sceneActions, outputChannel }) {
+  constructor({ catalog, buildManager, actions, sceneActions, outputChannel, extensionUri }) {
     this.catalog = catalog;
     this.buildManager = buildManager;
     this.actions = actions;
     this.sceneActions = sceneActions;
     this.outputChannel = outputChannel;
+    this.extensionUri = extensionUri;
     this.view = undefined;
     this.selectedProject = undefined;
     this.contextTargetPath = undefined;
@@ -30,7 +32,22 @@ class ProjectWebviewProvider {
 
   resolveWebviewView(view) {
     this.view = view;
-    view.webview.options = { enableScripts: true };
+    const assetDirectory = path.join(this.extensionUri.fsPath, 'src', 'views', 'projectWebview');
+    const cssPath = path.join(assetDirectory, 'projectWebview.css');
+    const clientPath = path.join(assetDirectory, 'projectWebviewClient.js');
+    view.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.file(assetDirectory)]
+    };
+    this.assetUris = fs.existsSync(cssPath) && fs.existsSync(clientPath)
+      ? {
+        css: view.webview.asWebviewUri(vscode.Uri.file(cssPath)).toString(),
+        client: view.webview.asWebviewUri(vscode.Uri.file(clientPath)).toString()
+      }
+      : undefined;
+    if (!this.assetUris) {
+      this.outputChannel?.appendLine(`[DAGOR_PM] Missing webview assets in ${assetDirectory}.`);
+    }
     view.webview.onDidReceiveMessage(message => this.handleMessage(message));
     view.webview.onDidReceiveMessage(message => {
       if (message?.type === 'ready') {
@@ -47,6 +64,10 @@ class ProjectWebviewProvider {
 
   render() {
     if (this.view) {
+      if (!this.assetUris) {
+        this.view.webview.html = '';
+        return;
+      }
       const html = this.getHtml();
       this.projectChevronAnimations.clear();
       this.view.webview.html = html;
@@ -486,7 +507,9 @@ class ProjectWebviewProvider {
         projectChevronAnimations: this.projectChevronAnimations,
         animateProjectPanel: this.animateProjectPanel,
         projectPanelFromHeight: this.projectPanelFromHeight
-      }
+      },
+      assetUris: this.assetUris,
+      cspSource: this.view?.webview.cspSource || ''
     });
   }
 }
