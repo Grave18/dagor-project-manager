@@ -23,7 +23,7 @@
   "scripts": {
     "extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
     "typecheck": "tsc --project tsconfig.json",
-    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js test/pathUtils.test.js test/sceneDeletionController.test.js"
+    "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js test/pathUtils.test.js test/sceneDeletionController.test.js test/projectCatalog.test.js"
   },
   "contributes": {
     "commands": [

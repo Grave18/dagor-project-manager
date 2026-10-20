@@ -119,7 +119,6 @@ class ProjectCatalog {
     this.ensureExecutableWatcher();
     if (this.refreshPromise) return this.refreshPromise;
 
-    this.projects = [];
     this.isRefreshing = true;
     this.discoveryError = undefined;
     this.onDidChange.fire(this.projects);

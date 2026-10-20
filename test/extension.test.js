@@ -797,7 +797,7 @@ test('rejects object-shaped and unknown project identifiers and forged scene pat
   assert.equal(launches.length, launchesBefore);
 });
 
-test('shows a searching state while an asynchronous project refresh is pending', async () => {
+test('keeps discovered projects visible while an asynchronous refresh is pending', async () => {
   await refreshCatalog();
   const originalFindFiles = vscode.workspace.findFiles;
   let releaseApplicationSearch;
@@ -811,9 +811,11 @@ test('shows a searching state while an asynchronous project refresh is pending',
   const refreshPromise = webviewView.webview.send({ type: 'refresh' });
   try {
     await searchStarted;
-    assert.match(webviewView.webview.html, /Searching for Dagor projects/);
+    assert.match(webviewView.webview.html, /project_stalker/);
+    assert.match(webviewView.webview.html, /outerSpace/);
+    assert.match(webviewView.webview.html, /sample\.level\.blk/);
+    assert.match(webviewView.webview.html, /id="refresh"[^>]*disabled/);
     assert.doesNotMatch(webviewView.webview.html, /No Dagor projects found\./);
-    assert.doesNotMatch(webviewView.webview.html, /data-select=/);
   } finally {
     vscode.workspace.findFiles = originalFindFiles;
     releaseApplicationSearch?.();
