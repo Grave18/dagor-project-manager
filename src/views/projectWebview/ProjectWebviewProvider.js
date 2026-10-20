@@ -385,23 +385,32 @@ class ProjectWebviewProvider {
     const strings = {
       language: vscode.env?.language?.startsWith('ru') ? 'ru' : 'en',
       refresh: vscode.l10n.t('Refresh'),
+      refreshTooltip: vscode.l10n.t('Search the engine root folder for Dagor projects'),
       createProject: vscode.l10n.t('Create Project'),
+      createProjectTooltip: vscode.l10n.t('Create a starter project in the DagorEngine root'),
       emptySearching: vscode.l10n.t('Searching for Dagor projects…'),
       emptySearchFailed: vscode.l10n.t('Dagor project search failed.'),
       emptyNoProjects: vscode.l10n.t('No Dagor projects found. Open a workspace containing application.blk and prog/build.py.'),
       buildProject: vscode.l10n.t('Build Project'),
+      buildProjectTooltip: vscode.l10n.t('Show or hide build options'),
       selectComponents: vscode.l10n.t('Select components to build:'),
       build: vscode.l10n.t('Build'),
       stopBuild: vscode.l10n.t('Stop Build'),
       openDaViewer: vscode.l10n.t('Open daViewer'),
+      openDaViewerTooltip: vscode.l10n.t('Open this project in the asset viewer'),
       openScene: vscode.l10n.t('Open Scene'),
+      openSceneTooltip: vscode.l10n.t('Show or hide scenes in develop/levels'),
       scenesLocation: vscode.l10n.t('Scenes should be located in develop/levels'),
       createScene: vscode.l10n.t('Create Scene'),
+      createSceneTooltip: vscode.l10n.t('Create a blank scene or start from a template'),
       runGame: vscode.l10n.t('Run Game'),
+      runGameTooltip: vscode.l10n.t('Show or hide game executables in game/ or one folder below'),
       gamesLocation: vscode.l10n.t('Game executables should be located in game/ or one folder below'),
       runCommand: vscode.l10n.t('Run Command'),
+      runCommandTooltip: vscode.l10n.t('Show or hide command files in game/'),
       commandsLocation: vscode.l10n.t('Command files should be located in game/'),
-      createCommand: vscode.l10n.t('Create Command')
+      createCommand: vscode.l10n.t('Create Command'),
+      createCommandTooltip: vscode.l10n.t("Create and open a .cmd file in this project's game/ folder")
     };
     const componentLabels = {
       code: vscode.l10n.t('Code'),
