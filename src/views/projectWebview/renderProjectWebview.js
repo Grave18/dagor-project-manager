@@ -5,8 +5,8 @@ const ICON_PATHS = {
   folder: '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H10l2 2h7.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/>',
   folderPlus: '<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H10l2 2h7.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/><circle cx="18" cy="17" r="4" fill="var(--vscode-sideBar-background, var(--vscode-editor-background))"/><path d="M18 15v4m-2-2h4"/>',
   refresh: '<path d="M3 2v6h6M21 22v-6h-6M21 12a9 9 0 0 0-15-6.7L3 8m0 4a9 9 0 0 0 15 6.7L21 16"/>',
-  build: '<path d="m14 6 4-4 4 4-4 4M18 2l-7 7m1 1 4 4-8 8a2.1 2.1 0 0 1-3-3z"/>',
-  external: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M10 14 20 4m-7 0h7v7"/>',
+  build: '<rect x="8.5" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  external: '<path d="M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4M15 4h5v5m-8 3 8-8"/>',
   scene: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
   play: '<path d="m8 5 11 7-11 7z"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"/>',
@@ -83,7 +83,7 @@ function renderProjectWebview({ projects = [], buildComponents = [], selectedPro
         <section class="project-actions${animation?.animateProjectPanel ? ' opening' : ''}"${animation?.animateProjectPanel ? ` style="height:${animation?.projectPanelFromHeight ?? 0}px"` : ''} data-project="${projectId}" data-running="${running}">
           <div class="action-grid">
             <div class="action-group">
-          <button type="button" class="action build-toggle" data-action="build" data-context-kind="build" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"build","preventDefaultContextMenuItems":true}' aria-expanded="${running}" aria-label="${escapeHtml(strings.buildProject || 'Build Project')}">${iconSvg('build')} <span>${escapeHtml(strings.buildProject || 'Build Project')}</span></button>
+          <button type="button" class="action build-toggle" data-action="build" data-context-kind="build" data-context-project="${projectId}" data-vscode-context='{"webviewSection":"build","preventDefaultContextMenuItems":true}' aria-expanded="${running}" aria-label="${escapeHtml(strings.buildProject || 'Build Project')}">${iconSvg('build')} <span>${escapeHtml(strings.buildProject || 'Build Project')}</span><span class="end-chevron ${running ? 'expanded' : ''}" aria-hidden="true">${iconSvg('chevron')}</span></button>
               <div class="components ${running ? 'visible' : ''}"><div class="caption">${escapeHtml(strings.selectComponents || 'Select components to build:')}</div>${buildItems}<button type="button" class="build-submit ${running ? 'running' : ''}" data-action="submitBuild" data-build-label="${escapeHtml(strings.build || 'Build')}" data-stop-build-label="${escapeHtml(strings.stopBuild || 'Stop Build')}" aria-label="${escapeHtml(running ? strings.stopBuild || 'Stop Build' : strings.build || 'Build')}"><span class="build-icon">${iconSvg('play', 'build-start-icon')}${iconSvg('stop', 'build-stop-icon')}</span> <span class="build-label">${escapeHtml(running ? strings.stopBuild || 'Stop Build' : strings.build || 'Build')}</span></button></div>
               <button type="button" class="action" data-action="viewer" data-vscode-context='{"preventDefaultContextMenuItems":true}'>${iconSvg('external')} <span>${escapeHtml(strings.openDaViewer || 'Open daViewer')}</span></button>
             </div>

@@ -92,8 +92,31 @@ const blockButtonsFor2s=()=>{
               vscode.postMessage({type:'stopBuild',project:projectIdFor(button)});
             }else{
               const components=actions.querySelector('.components');
-              const visible=components.classList.toggle('visible');
-              button.setAttribute('aria-expanded',String(visible));
+              components.getAnimations().forEach(animation=>animation.cancel());
+              components.style.height='';
+              components.style.opacity='';
+              components.style.overflow='';
+              const expanding=!components.classList.contains('visible');
+              const fromHeight=components.getBoundingClientRect().height;
+              if(expanding)components.classList.add('visible');
+              const toHeight=expanding?components.scrollHeight:0;
+              button.setAttribute('aria-expanded',String(expanding));
+              button.querySelector('.end-chevron').classList.toggle('expanded',expanding);
+              if(!prefersReducedMotion&&components.animate){
+                const animation=components.animate(
+                  [{height:fromHeight+'px',opacity:expanding?0:1},{height:toHeight+'px',opacity:expanding?1:0}],
+                  {duration:220,easing:expanding?'cubic-bezier(.22,1,.36,1)':'cubic-bezier(.4,0,1,1)'}
+                );
+                components.style.overflow='hidden';
+                animation.onfinish=()=>{
+                  components.style.height='';
+                  components.style.opacity='';
+                  components.style.overflow='';
+                  if(!expanding)components.classList.remove('visible');
+                };
+              }else if(!expanding){
+                components.classList.remove('visible');
+              }
             }
             return;
           }
