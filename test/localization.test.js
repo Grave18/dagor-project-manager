@@ -57,6 +57,13 @@ test('runtime localization calls are present in both bundles with matching place
     const match = /^bundle\.l10n\.([\w-]+)\.json$/i.exec(filename);
     if (match) availableLocales.add(match[1].toLowerCase());
   }
-  assert.deepEqual(manifest.contributes.configuration.properties['dagorProjectManager.language'].enum,
+  const configurationNodes = Array.isArray(manifest.contributes.configuration)
+    ? manifest.contributes.configuration
+    : [manifest.contributes.configuration];
+  const languageSetting = configurationNodes
+    .map(configuration => configuration.properties?.['dagorProjectManager.language'])
+    .find(Boolean);
+  assert.ok(languageSetting, 'language setting should exist in a configuration category');
+  assert.deepEqual(languageSetting.enum,
     ['system', ...[...availableLocales].sort((left, right) => left.localeCompare(right))]);
 });

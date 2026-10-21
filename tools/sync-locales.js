@@ -19,7 +19,13 @@ const locales = [...localeIds].sort((left, right) => left.localeCompare(right));
 const settingValues = ['system', ...locales];
 const manifestPath = path.join(root, 'package.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-const languageSetting = manifest.contributes.configuration.properties['dagorProjectManager.language'];
+const configurationNodes = Array.isArray(manifest.contributes.configuration)
+  ? manifest.contributes.configuration
+  : [manifest.contributes.configuration];
+const languageSetting = configurationNodes
+  .map(configuration => configuration.properties?.['dagorProjectManager.language'])
+  .find(Boolean);
+if (!languageSetting) throw new Error('Could not find dagorProjectManager.language in package.json');
 languageSetting.enum = settingValues;
 languageSetting.enumItemLabels = settingValues.map(value => `%configuration.language.option.${value}%`);
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);

@@ -386,52 +386,76 @@
         "label": "%submenu.blkContext.label%"
       }
     ],
-    "configuration": {
-      "title": "%configuration.title%",
-      "properties": {
-        "dagorProjectManager.toolsDirectory": {
-          "type": "string",
-          "default": "",
-          "description": "%configuration.toolsDirectory.description%"
-        },
-        "dagorProjectManager.daEditorExecutable": {
-          "type": "string",
-          "default": "daEditor3x-dev.exe",
-          "description": "%configuration.daEditorExecutable.description%"
-        },
-        "dagorProjectManager.daViewerExecutable": {
-          "type": "string",
-          "default": "assetViewer2-dev.exe",
-          "description": "%configuration.daViewerExecutable.description%"
-        },
-        "dagorProjectManager.blkEditorExecutable": {
-          "type": "string",
-          "default": "blkEditor-dev.exe",
-          "description": "%configuration.blkEditorExecutable.description%"
-        },
-        "dagorProjectManager.pythonExecutable": {
-          "type": "string",
-          "default": "python",
-          "description": "%configuration.pythonExecutable.description%"
-        },
-        "dagorProjectManager.language": {
-          "type": "string",
-          "default": "system",
-          "enum": [
-            "system",
-            "en",
-            "ru"
-          ],
-          "enumItemLabels": [
-            "%configuration.language.option.system%",
-            "%configuration.language.option.en%",
-            "%configuration.language.option.ru%"
-          ],
-          "description": "%configuration.language.description%",
-          "scope": "window"
+    "configuration": [
+      {
+        "id": "dagorProjectManager",
+        "title": "%configuration.category.general%",
+        "order": 1,
+        "properties": {
+          "dagorProjectManager.language": {
+            "type": "string",
+            "default": "system",
+            "enum": [
+              "system",
+              "en",
+              "ru"
+            ],
+            "enumItemLabels": [
+              "%configuration.language.option.system%",
+              "%configuration.language.option.en%",
+              "%configuration.language.option.ru%"
+            ],
+            "description": "%configuration.language.description%",
+            "scope": "window",
+            "order": 1
+          }
+        }
+      },
+      {
+        "id": "dagorProjectManager",
+        "title": "%configuration.category.tools%",
+        "order": 2,
+        "properties": {
+          "dagorProjectManager.toolsDirectory": {
+            "type": "string",
+            "default": "",
+            "description": "%configuration.toolsDirectory.description%",
+            "order": 1
+          },
+          "dagorProjectManager.daEditorExecutable": {
+            "type": "string",
+            "default": "daEditor3x-dev.exe",
+            "description": "%configuration.daEditorExecutable.description%",
+            "order": 2
+          },
+          "dagorProjectManager.daViewerExecutable": {
+            "type": "string",
+            "default": "assetViewer2-dev.exe",
+            "description": "%configuration.daViewerExecutable.description%",
+            "order": 3
+          },
+          "dagorProjectManager.blkEditorExecutable": {
+            "type": "string",
+            "default": "blkEditor-dev.exe",
+            "description": "%configuration.blkEditorExecutable.description%",
+            "order": 4
+          }
+        }
+      },
+      {
+        "id": "dagorProjectManager",
+        "title": "%configuration.category.build%",
+        "order": 3,
+        "properties": {
+          "dagorProjectManager.pythonExecutable": {
+            "type": "string",
+            "default": "python",
+            "description": "%configuration.pythonExecutable.description%",
+            "order": 1
+          }
         }
       }
-    }
+    ]
   },
   "devDependencies": {
     "@types/node": "^18.19.130",

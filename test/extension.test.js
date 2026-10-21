@@ -315,7 +315,17 @@ test('uses the Dagor Project Manager name and application icons in its metadata'
   assert.equal(extensionManifest.name, 'dagor-project-manager');
   assert.equal(resolvePackageString(extensionManifest.displayName), 'Dagor Project Manager');
   assert.ok(extensionManifest.activationEvents.includes('onStartupFinished'));
-  assert.equal(resolvePackageString(extensionManifest.contributes.configuration.title), 'Dagor Project Manager');
+  const configurationCategories = extensionManifest.contributes.configuration;
+  assert.deepEqual(configurationCategories.map(category => resolvePackageString(category.title)), ['General', 'Tools', 'Build']);
+  assert.equal(configurationCategories[0].properties['dagorProjectManager.language'].order, 1);
+  assert.deepEqual(configurationCategories.flatMap(category => Object.keys(category.properties)).sort(), [
+    'dagorProjectManager.blkEditorExecutable',
+    'dagorProjectManager.daEditorExecutable',
+    'dagorProjectManager.daViewerExecutable',
+    'dagorProjectManager.language',
+    'dagorProjectManager.pythonExecutable',
+    'dagorProjectManager.toolsDirectory'
+  ]);
   assert.equal(resolvePackageString(extensionManifest.contributes.viewsContainers.activitybar[0].title), 'Dagor Project Manager');
   assert.equal(resolvePackageString(extensionManifest.contributes.submenus[0].label), 'Dagor Project Manager');
   assert.equal(extensionManifest.icon, 'media/dagor.png');
