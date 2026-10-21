@@ -185,5 +185,6 @@
   "blkEditor executable": "исполняемый файл blkEditor",
   "daViewer executable": "исполняемый файл daViewer",
   "daEditor executable": "исполняемый файл daEditor",
-  "Dagor Project Manager": "Dagor Project Manager"
+  "Dagor Project Manager": "Dagor Project Manager",
+  "Open Dagor Project Manager settings": "Открыть настройки Dagor Project Manager"
 }

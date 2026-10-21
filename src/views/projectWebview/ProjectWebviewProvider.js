@@ -98,6 +98,10 @@ class ProjectWebviewProvider {
       await vscode.commands.executeCommand('dagorProjectManager.generateProject');
       return;
     }
+    if (message.type === 'openSettings') {
+      await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:project-stalker.dagor-project-manager');
+      return;
+    }
 
     const projectId = typeof message.project === 'string' ? message.project : undefined;
     const project = projectId === undefined
@@ -397,6 +401,7 @@ class ProjectWebviewProvider {
       language: selectedLanguage === 'system' ? (vscode.env?.language || 'en') : selectedLanguage,
       refresh: t('Refresh'),
       refreshTooltip: t('Search the engine root folder for Dagor projects'),
+      openSettingsTooltip: t('Open Dagor Project Manager settings'),
       createProject: t('Create Project'),
       createProjectTooltip: t('Create a starter project in the DagorEngine root'),
       emptySearching: t('Searching for Dagor projects…'),

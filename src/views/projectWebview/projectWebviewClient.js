@@ -48,6 +48,7 @@ const vscode=acquireVsCodeApi();
   if(document.getElementById('refresh').disabled)return;
   vscode.postMessage({type:'refresh'});
 });
+document.getElementById('open-settings').addEventListener('click',()=>vscode.postMessage({type:'openSettings'}));
 document.getElementById('add-project').addEventListener('click',()=>{const button=document.getElementById('add-project');if(button.disabled)return;vscode.postMessage({type:'addProject'});});
 const blockButtonsFor2s=()=>{
   const buttons=document.querySelectorAll('.action[data-action]:not([data-action="build"]):not([data-action="submitBuild"]), .scene[data-scene], .game[data-game], .game-command[data-game-command], .create-command, .create-scene');

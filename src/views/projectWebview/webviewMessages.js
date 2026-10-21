@@ -23,6 +23,7 @@ function isWebviewMessage(value) {
     case 'ready':
     case 'refresh':
     case 'addProject':
+    case 'openSettings':
       return true;
     case 'setContextTarget':
       return value.target === null || (isRecord(value.target) &&

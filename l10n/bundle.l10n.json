@@ -185,5 +185,6 @@
   "No Dagor build is running for {project}.": "No Dagor build is running for {project}.",
   "this project": "this project",
   "Build cancellation requested.": "Build cancellation requested.",
-  "Failed to stop build: {error}": "Failed to stop build: {error}"
+  "Failed to stop build: {error}": "Failed to stop build: {error}",
+  "Open Dagor Project Manager settings": "Open Dagor Project Manager settings"
 }
