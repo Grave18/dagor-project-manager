@@ -38,7 +38,7 @@
   "configuration.category.general": "General",
   "configuration.category.tools": "Tools",
   "configuration.category.build": "Build",
-  "configuration.toolsDirectory.description": "Directory containing Dagor CDK executables. Defaults to DAGOR_CDK_DIR or this repository's tools/dagor_cdk folder.",
+  "configuration.toolsDirectory.description": "Directory containing Dagor CDK executables. Defaults to DAGOR_CDK_DIR or the DagorEngine repository's tools/dagor_cdk folder, found by searching parent folders of the open project.",
   "configuration.daEditorExecutable.description": "daEditor executable name or absolute path.",
   "configuration.daViewerExecutable.description": "daViewer (Asset Viewer) executable name or absolute path.",
   "configuration.blkEditorExecutable.description": "blkEditor executable name or absolute path.",
