@@ -40,5 +40,9 @@
   "configuration.daEditorExecutable.description": "Имя исполняемого файла daEditor или абсолютный путь к нему.",
   "configuration.daViewerExecutable.description": "Имя исполняемого файла daViewer (Asset Viewer) или абсолютный путь к нему.",
   "configuration.blkEditorExecutable.description": "Имя исполняемого файла blkEditor или абсолютный путь к нему.",
-  "configuration.pythonExecutable.description": "Исполняемый файл Python для запуска build.py проекта."
+  "configuration.pythonExecutable.description": "Исполняемый файл Python для запуска build.py проекта.",
+  "configuration.language.description": "Язык Dagor Project Manager. Системный вариант следует языку интерфейса VS Code; если перевод недоступен, используется английский.",
+  "configuration.language.option.system": "Как в системе",
+  "configuration.language.option.en": "Английский",
+  "configuration.language.option.ru": "Русский"
 }

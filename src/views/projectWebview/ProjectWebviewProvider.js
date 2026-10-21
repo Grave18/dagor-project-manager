@@ -1,6 +1,7 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const vscode = require('vscode');
+const { t } = require('../../localization');
 const { BUILD_COMPONENTS } = require('../../build/buildManager');
 const { renderProjectWebview } = require('./renderProjectWebview');
 const { isRecord, isWebviewMessage } = require('./webviewMessages');
@@ -22,12 +23,21 @@ class ProjectWebviewProvider {
     this.projectChevronAnimations = new Map();
     this.animateProjectPanel = false;
     this.projectPanelFromHeight = undefined;
-    this.disposable = catalog.onDidChange.event(projects => {
+    const catalogChangeDisposable = catalog.onDidChange.event(projects => {
       if (this.selectedProject && !projects.some(project => project.applicationFile === this.selectedProject)) {
         this.selectedProject = undefined;
       }
       this.render();
     });
+    const languageChangeDisposable = vscode.workspace.onDidChangeConfiguration?.(event => {
+      if (event.affectsConfiguration('dagorProjectManager.language')) this.render();
+    });
+    this.disposable = {
+      dispose() {
+        catalogChangeDisposable.dispose();
+        languageChangeDisposable?.dispose();
+      }
+    };
   }
 
   resolveWebviewView(view) {
@@ -46,7 +56,7 @@ class ProjectWebviewProvider {
       }
       : undefined;
     if (!this.assetUris) {
-      this.outputChannel?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Missing webview assets in {folder}.', { folder: assetDirectory })}`);
+      this.outputChannel?.appendLine(`[DAGOR_PM] ${t('Missing webview assets in {folder}.', { folder: assetDirectory })}`);
     }
     view.webview.onDidReceiveMessage(message => this.handleMessage(message));
     this.catalog.refresh();
@@ -257,36 +267,36 @@ class ProjectWebviewProvider {
     if (!project) return;
 
     const confirmation = await vscode.window.showWarningMessage(
-      vscode.l10n.t('Delete Dagor project "{project}"?', { project: project.label }),
+      t('Delete Dagor project "{project}"?', { project: project.label }),
       {
         modal: true,
-        detail: vscode.l10n.t('The entire project folder will be moved to the system trash:\n{path}', { path: project.root })
+        detail: t('The entire project folder will be moved to the system trash:\n{path}', { path: project.root })
       },
-      vscode.l10n.t('Delete Project'),
-      vscode.l10n.t('Cancel')
+      t('Delete Project'),
+      t('Cancel')
     );
-    if (confirmation !== vscode.l10n.t('Delete Project')) return;
+    if (confirmation !== t('Delete Project')) return;
 
     try {
       await vscode.workspace.fs.delete(vscode.Uri.file(project.root), { recursive: true, useTrash: true });
       await this.catalog.refresh();
     } catch (error) {
       const confirmation = await vscode.window.showWarningMessage(
-        vscode.l10n.t('Project "{project}" could not be moved to the system trash.', { project: project.label }),
+        t('Project "{project}" could not be moved to the system trash.', { project: project.label }),
         {
           modal: true,
-          detail: vscode.l10n.t('{error}\nPermanently deleting this project cannot be undone.\n{path}', { error: error.message, path: project.root })
+          detail: t('{error}\nPermanently deleting this project cannot be undone.\n{path}', { error: error.message, path: project.root })
         },
-        vscode.l10n.t('Permanently Delete'),
-        vscode.l10n.t('Cancel')
+        t('Permanently Delete'),
+        t('Cancel')
       );
-      if (confirmation !== vscode.l10n.t('Permanently Delete')) return;
+      if (confirmation !== t('Permanently Delete')) return;
 
       try {
         await vscode.workspace.fs.delete(vscode.Uri.file(project.root), { recursive: true });
         await this.catalog.refresh();
       } catch (deleteError) {
-        vscode.window.showErrorMessage(vscode.l10n.t('Failed to permanently delete Dagor project {project}: {error}', { project: project.label, error: deleteError.message }));
+        vscode.window.showErrorMessage(t('Failed to permanently delete Dagor project {project}: {error}', { project: project.label, error: deleteError.message }));
       }
     }
   }
@@ -299,36 +309,36 @@ class ProjectWebviewProvider {
     if (!command) return;
 
     const confirmation = await vscode.window.showWarningMessage(
-      vscode.l10n.t('Delete command "{command}"?', { command: command.label }),
+      t('Delete command "{command}"?', { command: command.label }),
       {
         modal: true,
-        detail: vscode.l10n.t('The command file will be moved to the system trash:\n{path}', { path: command.command })
+        detail: t('The command file will be moved to the system trash:\n{path}', { path: command.command })
       },
-      vscode.l10n.t('Delete Command'),
-      vscode.l10n.t('Cancel')
+      t('Delete Command'),
+      t('Cancel')
     );
-    if (confirmation !== vscode.l10n.t('Delete Command')) return;
+    if (confirmation !== t('Delete Command')) return;
 
     try {
       await vscode.workspace.fs.delete(vscode.Uri.file(command.command), { recursive: true, useTrash: true });
       await this.catalog.refresh();
     } catch (error) {
       const confirmation = await vscode.window.showWarningMessage(
-        vscode.l10n.t('Command "{command}" could not be moved to the system trash.', { command: command.label }),
+        t('Command "{command}" could not be moved to the system trash.', { command: command.label }),
         {
           modal: true,
-          detail: vscode.l10n.t('{error}\nPermanently deleting this command cannot be undone.\n{path}', { error: error.message, path: command.command })
+          detail: t('{error}\nPermanently deleting this command cannot be undone.\n{path}', { error: error.message, path: command.command })
         },
-        vscode.l10n.t('Permanently Delete'),
-        vscode.l10n.t('Cancel')
+        t('Permanently Delete'),
+        t('Cancel')
       );
-      if (confirmation !== vscode.l10n.t('Permanently Delete')) return;
+      if (confirmation !== t('Permanently Delete')) return;
 
       try {
         await vscode.workspace.fs.delete(vscode.Uri.file(command.command), { recursive: true });
         await this.catalog.refresh();
       } catch (deleteError) {
-        vscode.window.showErrorMessage(vscode.l10n.t('Failed to permanently delete command {command}: {error}', { command: command.label, error: deleteError.message }));
+        vscode.window.showErrorMessage(t('Failed to permanently delete command {command}: {error}', { command: command.label, error: deleteError.message }));
       }
     }
   }
@@ -382,42 +392,43 @@ class ProjectWebviewProvider {
 
   getHtml() {
     const project = this.catalog.projects.find(item => item.applicationFile === this.selectedProject);
+    const selectedLanguage = vscode.workspace.getConfiguration('dagorProjectManager').get('language') || 'system';
     const strings = {
-      language: vscode.env?.language?.startsWith('ru') ? 'ru' : 'en',
-      refresh: vscode.l10n.t('Refresh'),
-      refreshTooltip: vscode.l10n.t('Search the engine root folder for Dagor projects'),
-      createProject: vscode.l10n.t('Create Project'),
-      createProjectTooltip: vscode.l10n.t('Create a starter project in the DagorEngine root'),
-      emptySearching: vscode.l10n.t('Searching for Dagor projects…'),
-      emptySearchFailed: vscode.l10n.t('Dagor project search failed.'),
-      emptyNoProjects: vscode.l10n.t('No Dagor projects found. Open a workspace containing application.blk and prog/build.py.'),
-      buildProject: vscode.l10n.t('Build Project'),
-      buildProjectTooltip: vscode.l10n.t('Show or hide build options'),
-      selectComponents: vscode.l10n.t('Select components to build:'),
-      build: vscode.l10n.t('Build'),
-      stopBuild: vscode.l10n.t('Stop Build'),
-      openDaViewer: vscode.l10n.t('Open daViewer'),
-      openDaViewerTooltip: vscode.l10n.t('Open this project in the asset viewer'),
-      openScene: vscode.l10n.t('Open Scene'),
-      openSceneTooltip: vscode.l10n.t('Show or hide scenes in develop/levels'),
-      scenesLocation: vscode.l10n.t('Scenes should be located in develop/levels'),
-      createScene: vscode.l10n.t('Create Scene'),
-      createSceneTooltip: vscode.l10n.t('Create a blank scene or start from a template'),
-      runGame: vscode.l10n.t('Run Game'),
-      runGameTooltip: vscode.l10n.t('Show or hide game executables in game/ or one folder below'),
-      gamesLocation: vscode.l10n.t('Game executables should be located in game/ or one folder below'),
-      runCommand: vscode.l10n.t('Run Command'),
-      runCommandTooltip: vscode.l10n.t('Show or hide command files in game/'),
-      commandsLocation: vscode.l10n.t('Command files should be located in game/'),
-      createCommand: vscode.l10n.t('Create Command'),
-      createCommandTooltip: vscode.l10n.t("Create and open a .cmd file in this project's game/ folder")
+      language: selectedLanguage === 'system' ? (vscode.env?.language || 'en') : selectedLanguage,
+      refresh: t('Refresh'),
+      refreshTooltip: t('Search the engine root folder for Dagor projects'),
+      createProject: t('Create Project'),
+      createProjectTooltip: t('Create a starter project in the DagorEngine root'),
+      emptySearching: t('Searching for Dagor projects…'),
+      emptySearchFailed: t('Dagor project search failed.'),
+      emptyNoProjects: t('No Dagor projects found. Open a workspace containing application.blk and prog/build.py.'),
+      buildProject: t('Build Project'),
+      buildProjectTooltip: t('Show or hide build options'),
+      selectComponents: t('Select components to build:'),
+      build: t('Build'),
+      stopBuild: t('Stop Build'),
+      openDaViewer: t('Open daViewer'),
+      openDaViewerTooltip: t('Open this project in the asset viewer'),
+      openScene: t('Open Scene'),
+      openSceneTooltip: t('Show or hide scenes in develop/levels'),
+      scenesLocation: t('Scenes should be located in develop/levels'),
+      createScene: t('Create Scene'),
+      createSceneTooltip: t('Create a blank scene or start from a template'),
+      runGame: t('Run Game'),
+      runGameTooltip: t('Show or hide game executables in game/ or one folder below'),
+      gamesLocation: t('Game executables should be located in game/ or one folder below'),
+      runCommand: t('Run Command'),
+      runCommandTooltip: t('Show or hide command files in game/'),
+      commandsLocation: t('Command files should be located in game/'),
+      createCommand: t('Create Command'),
+      createCommandTooltip: t("Create and open a .cmd file in this project's game/ folder")
     };
     const componentLabels = {
-      code: vscode.l10n.t('Code'),
-      shaders: vscode.l10n.t('Shaders'),
-      assets: vscode.l10n.t('Assets'),
-      vromfs: vscode.l10n.t('Vromfs'),
-      gui: vscode.l10n.t('Gui')
+      code: t('Code'),
+      shaders: t('Shaders'),
+      assets: t('Assets'),
+      vromfs: t('Vromfs'),
+      gui: t('Gui')
     };
     return renderProjectWebview({
       projects: this.catalog.projects,

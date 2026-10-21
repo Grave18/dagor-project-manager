@@ -40,7 +40,7 @@ test('runtime localization calls are present in both bundles with matching place
   };
   collectFiles(path.join(root, 'src'));
   const sources = sourceFiles.flatMap(file =>
-    [...fs.readFileSync(file, 'utf8').matchAll(/vscode\.l10n\.t\(\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")/g)]
+    [...fs.readFileSync(file, 'utf8').matchAll(/(?<![\w$.])t\(\s*(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")/g)]
       .map(match => (match[1] ?? match[2]).replace(/\\n/g, '\n').replace(/\\(["'\\])/g, '$1'))
   );
   for (const source of new Set(sources)) {
@@ -51,4 +51,12 @@ test('runtime localization calls are present in both bundles with matching place
     assert.deepEqual(placeholders(runtimeRussian[source]), placeholders(runtimeEnglish[source]), `placeholder mismatch: ${source}`);
   }
   assert.deepEqual(Object.keys(runtimeEnglish).sort(), Object.keys(runtimeRussian).sort());
+
+  const availableLocales = new Set(['en']);
+  for (const filename of fs.readdirSync(path.join(root, 'l10n'))) {
+    const match = /^bundle\.l10n\.([\w-]+)\.json$/i.exec(filename);
+    if (match) availableLocales.add(match[1].toLowerCase());
+  }
+  assert.deepEqual(manifest.contributes.configuration.properties['dagorProjectManager.language'].enum,
+    ['system', ...[...availableLocales].sort((left, right) => left.localeCompare(right))]);
 });

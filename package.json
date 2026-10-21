@@ -21,7 +21,9 @@
   "main": "./src/extension.js",
   "l10n": "./l10n",
   "scripts": {
-    "extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
+    "extract-l10n": "node tools/extract-l10n.js",
+    "sync-locales": "node tools/sync-locales.js",
+    "vscode:prepublish": "npm run sync-locales",
     "typecheck": "tsc --project tsconfig.json",
     "test": "node --test test/extension.test.js test/projectGenerator.test.js test/starterBuild.test.js test/starterLevel.test.js test/projectWebview.test.js test/localization.test.js test/pathUtils.test.js test/sceneDeletionController.test.js test/projectCatalog.test.js"
   },
@@ -411,6 +413,22 @@
           "type": "string",
           "default": "python",
           "description": "%configuration.pythonExecutable.description%"
+        },
+        "dagorProjectManager.language": {
+          "type": "string",
+          "default": "system",
+          "enum": [
+            "system",
+            "en",
+            "ru"
+          ],
+          "enumItemLabels": [
+            "%configuration.language.option.system%",
+            "%configuration.language.option.en%",
+            "%configuration.language.option.ru%"
+          ],
+          "description": "%configuration.language.description%",
+          "scope": "window"
         }
       }
     }

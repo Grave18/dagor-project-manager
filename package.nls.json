@@ -40,5 +40,9 @@
   "configuration.daEditorExecutable.description": "daEditor executable name or absolute path.",
   "configuration.daViewerExecutable.description": "daViewer (Asset Viewer) executable name or absolute path.",
   "configuration.blkEditorExecutable.description": "blkEditor executable name or absolute path.",
-  "configuration.pythonExecutable.description": "Python executable used to run the project's build.py script."
+  "configuration.pythonExecutable.description": "Python executable used to run the project's build.py script.",
+  "configuration.language.description": "Language for Dagor Project Manager. System follows the VS Code display language; English is used when a translation is unavailable.",
+  "configuration.language.option.system": "System",
+  "configuration.language.option.en": "English",
+  "configuration.language.option.ru": "Russian"
 }

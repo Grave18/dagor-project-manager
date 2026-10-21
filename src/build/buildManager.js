@@ -1,5 +1,6 @@
 const path = require('node:path');
 const vscode = require('vscode');
+const { t } = require('../localization');
 const { findBuildScript } = require('../projects/projectCatalog');
 
 const BUILD_COMPONENTS = [
@@ -34,7 +35,7 @@ class BuildManager {
     this.subscriptions?.push(watcher.onDidCreate(() => this.refreshCatalog?.()));
     this.subscriptions?.push(watcher.onDidDelete(() => this.refreshCatalog?.()));
     this.subscriptions?.push(watcher.onDidChange(() => this.refreshCatalog?.()));
-    output?.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Created game executable watcher ({pattern}).', { pattern: '**/game/**/*.exe' })}`);
+    output?.appendLine(`[DAGOR_PM] ${t('Created game executable watcher ({pattern}).', { pattern: '**/game/**/*.exe' })}`);
     this.gameExecutableWatcherOutput = undefined;
   }
 
@@ -44,7 +45,7 @@ class BuildManager {
 
   start(project, components, onBuildStateChange = () => {}) {
     if (!project?.root) {
-      this.vscode.window.showErrorMessage(vscode.l10n.t('Select a Dagor project in the sidebar.'));
+      this.vscode.window.showErrorMessage(t('Select a Dagor project in the sidebar.'));
       return;
     }
     const selected = Array.isArray(components)
@@ -60,13 +61,13 @@ class BuildManager {
 
     const script = findBuildScript(project.root);
     if (!script) {
-      this.vscode.window.showErrorMessage(vscode.l10n.t('Cannot find build.py for project {project}.', { project: project.label }));
+      this.vscode.window.showErrorMessage(t('Cannot find build.py for project {project}.', { project: project.label }));
       return;
     }
 
-    const output = this.vscode.window.createOutputChannel(vscode.l10n.t('Dagor Build: {project}', { project: project.label }));
+    const output = this.vscode.window.createOutputChannel(t('Dagor Build: {project}', { project: project.label }));
     output.show(true);
-    output.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Running: {script} {components}', { script, components: selected.join(' ') })}`);
+    output.appendLine(`[DAGOR_PM] ${t('Running: {script} {components}', { script, components: selected.join(' ') })}`);
     const python = this.vscode.workspace.getConfiguration('dagorProjectManager').get('pythonExecutable') || 'python';
     const child = this.spawn(python, [script, ...selected], {
       cwd: path.dirname(script),
@@ -75,7 +76,7 @@ class BuildManager {
     onBuildStateChange(true);
     if (this.gameExecutableWatcher) {
       this.gameExecutableWatcher.dispose();
-      output.appendLine(`[DAGOR_PM] ${vscode.l10n.t('Disposed game executable watcher ({pattern}) for build.', { pattern: '**/game/**/*.exe' })}`);
+      output.appendLine(`[DAGOR_PM] ${t('Disposed game executable watcher ({pattern}) for build.', { pattern: '**/game/**/*.exe' })}`);
       this.gameExecutableWatcherOutput = output;
       this.gameExecutableWatcher = undefined;
     }
@@ -91,15 +92,15 @@ class BuildManager {
     };
     this.runningBuilds.set(key, { child, finishBuild, output });
     child.once('error', error => {
-      output.appendLine(`\n[DAGOR_PM] ${vscode.l10n.t('Failed to start build: {error}', { error: error.message })}`);
-      this.vscode.window.showErrorMessage(vscode.l10n.t('Failed to start Dagor build: {error}', { error: error.message }));
+      output.appendLine(`\n[DAGOR_PM] ${t('Failed to start build: {error}', { error: error.message })}`);
+      this.vscode.window.showErrorMessage(t('Failed to start Dagor build: {error}', { error: error.message }));
       finishBuild();
     });
     child.once('exit', (code, signal) => {
       const result = signal
-        ? vscode.l10n.t('signal {signal}', { signal })
-        : vscode.l10n.t('exit code {code}', { code });
-      output.appendLine(`\n[DAGOR_PM] ${vscode.l10n.t('Build finished with {result}.', { result })}`);
+        ? t('signal {signal}', { signal })
+        : t('exit code {code}', { code });
+      output.appendLine(`\n[DAGOR_PM] ${t('Build finished with {result}.', { result })}`);
       finishBuild();
     });
     child.once('close', finishBuild);
@@ -109,15 +110,15 @@ class BuildManager {
     const key = project?.root && path.resolve(project.root);
     const build = key && this.runningBuilds.get(key);
     if (!build) {
-      this.vscode.window.showInformationMessage(vscode.l10n.t('No Dagor build is running for {project}.', { project: project?.label || vscode.l10n.t('this project') }));
+      this.vscode.window.showInformationMessage(t('No Dagor build is running for {project}.', { project: project?.label || t('this project') }));
       return;
     }
 
-    build.output.appendLine(`\n[DAGOR_PM] ${vscode.l10n.t('Build cancellation requested.')}`);
+    build.output.appendLine(`\n[DAGOR_PM] ${t('Build cancellation requested.')}`);
     const stopped = process.platform === 'win32'
       ? this.spawn('taskkill', ['/pid', String(build.child.pid), '/t', '/f'], { windowsHide: true })
       : (build.child.kill('SIGTERM'), undefined);
-    stopped?.once('error', error => this.vscode.window.showErrorMessage(vscode.l10n.t('Failed to stop build: {error}', { error: error.message })));
+    stopped?.once('error', error => this.vscode.window.showErrorMessage(t('Failed to stop build: {error}', { error: error.message })));
     build.finishBuild();
   }
 }

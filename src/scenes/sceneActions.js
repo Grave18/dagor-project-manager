@@ -1,6 +1,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const vscode = require('vscode');
+const { t } = require('../localization');
 const { isPathWithin } = require('../utils/pathUtils');
 
 function normalizeReference(value) {
@@ -103,11 +104,11 @@ async function existingFile(filePath) {
 async function findExportTargets(vscode, project, scenePath, levelContents) {
   const uncommentedContents = removeBlkComments(levelContents);
   const exportPath = uncommentedContents.match(/^\s*exportPath\s*:\s*t\s*=\s*"([^"]+)"/im)?.[1];
-  if (!exportPath) return { exportPath: undefined, targets: [], warning: vscode.l10n.t('The level has no exportPath; no game export can be identified.') };
+  if (!exportPath) return { exportPath: undefined, targets: [], warning: t('The level has no exportPath; no game export can be identified.') };
 
   const normalized = exportPath.replace(/\\/g, '/');
   if (/^(?:[a-z]:|\/|\\\\)/i.test(normalized)) {
-    return { exportPath, targets: [], warning: vscode.l10n.t('The exportPath is not project-relative and was left untouched: {path}', { path: exportPath }) };
+    return { exportPath, targets: [], warning: t('The exportPath is not project-relative and was left untouched: {path}', { path: exportPath }) };
   }
 
   const gameRoot = path.resolve(project.root, 'game');
@@ -116,18 +117,18 @@ async function findExportTargets(vscode, project, scenePath, levelContents) {
   try {
     realGameRoot = await fs.realpath(gameRoot);
   } catch {
-    return { exportPath, targets: [], warning: vscode.l10n.t('The project game/ folder could not be resolved; export was left untouched: {path}', { path: exportPath }) };
+    return { exportPath, targets: [], warning: t('The project game/ folder could not be resolved; export was left untouched: {path}', { path: exportPath }) };
   }
   if (!isPathWithin(projectRoot, realGameRoot)) {
-    return { exportPath, targets: [], warning: vscode.l10n.t('The project game/ folder resolves outside the project; export was left untouched: {path}', { path: exportPath }) };
+    return { exportPath, targets: [], warning: t('The project game/ folder resolves outside the project; export was left untouched: {path}', { path: exportPath }) };
   }
   const exportFile = path.resolve(gameRoot, ...normalized.split('/'));
   if (!isPathWithin(gameRoot, exportFile)) {
-    return { exportPath, targets: [], warning: vscode.l10n.t('The exportPath resolves outside game/ and was left untouched: {path}', { path: exportPath }) };
+    return { exportPath, targets: [], warning: t('The exportPath resolves outside game/ and was left untouched: {path}', { path: exportPath }) };
   }
   const extension = path.extname(exportFile).toLowerCase();
   if (extension !== '.bin' && extension !== '.blk') {
-    return { exportPath, targets: [], warning: vscode.l10n.t('The exportPath does not identify a .bin or .blk scene export and was left untouched: {path}', { path: exportPath }) };
+    return { exportPath, targets: [], warning: t('The exportPath does not identify a .bin or .blk scene export and was left untouched: {path}', { path: exportPath }) };
   }
   const basename = exportFile.slice(0, exportFile.length - path.extname(exportFile).length);
   const candidates = [`${basename}.bin`, `${basename}.blk`];
@@ -153,9 +154,9 @@ async function findExportTargets(vscode, project, scenePath, levelContents) {
     exportPath,
     targets,
     warning: targets.length === 0
-      ? vscode.l10n.t('No exported file was found for exportPath: {path}', { path: exportPath })
+      ? t('No exported file was found for exportPath: {path}', { path: exportPath })
       : missing.length > 0
-        ? vscode.l10n.t('Some expected export files were not found or were outside game/: {paths}', { paths: missing.join(', ') })
+        ? t('Some expected export files were not found or were outside game/: {paths}', { paths: missing.join(', ') })
         : undefined
   };
 }
@@ -230,7 +231,7 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
   const levelPath = path.resolve(scenePath);
   const levelsRoot = path.resolve(project.root, 'develop', 'levels');
   if (!isPathWithin(levelsRoot, levelPath) || !levelPath.toLowerCase().endsWith('.level.blk')) {
-    throw new Error(vscode.l10n.t('The selected file is not a scene in this project’s develop/levels folder.'));
+    throw new Error(t('The selected file is not a scene in this project’s develop/levels folder.'));
   }
 
   const sceneDirectory = path.dirname(levelPath);
@@ -243,31 +244,31 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
       fs.realpath(levelsRoot)
     ]);
     if (!isPathWithin(realProjectRoot, realLevelsRoot)) {
-      throw new Error(vscode.l10n.t('The develop/levels folder resolves outside the project.'));
+      throw new Error(t('The develop/levels folder resolves outside the project.'));
     }
   } catch (error) {
-    throw new Error(vscode.l10n.t('Scene folder could not be safely resolved: {error}', { error: error.message }));
+    throw new Error(t('Scene folder could not be safely resolved: {error}', { error: error.message }));
   }
   let directoryInfo;
   try {
     directoryInfo = await fs.lstat(sceneDirectory);
   } catch (error) {
-    throw new Error(vscode.l10n.t('Scene folder could not be inspected: {error}', { error: error.message }));
+    throw new Error(t('Scene folder could not be inspected: {error}', { error: error.message }));
   }
   if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink()) {
-    throw new Error(vscode.l10n.t('The scene folder is not a regular directory, so it cannot be safely deleted.'));
+    throw new Error(t('The scene folder is not a regular directory, so it cannot be safely deleted.'));
   }
   const sourceFileInfo = await fs.lstat(levelPath).catch(() => undefined);
   if (!sourceFileInfo?.isFile() || sourceFileInfo.isSymbolicLink()) {
-    throw new Error(vscode.l10n.t('The selected scene file is not a regular file, so it cannot be safely deleted.'));
+    throw new Error(t('The selected scene file is not a regular file, so it cannot be safely deleted.'));
   }
   try {
     const realSceneDirectory = await fs.realpath(sceneDirectory);
     if (!isPathWithin(realLevelsRoot, realSceneDirectory)) {
-      throw new Error(vscode.l10n.t('The scene folder resolves outside develop/levels, so it cannot be safely deleted.'));
+      throw new Error(t('The scene folder resolves outside develop/levels, so it cannot be safely deleted.'));
     }
   } catch (error) {
-    throw new Error(vscode.l10n.t('Scene folder could not be safely resolved: {error}', { error: error.message }));
+    throw new Error(t('Scene folder could not be safely resolved: {error}', { error: error.message }));
   }
 
   const sceneTree = await inspectSceneTree(sceneDirectory);
@@ -276,7 +277,7 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
       canDelete: false,
       scenePath: levelPath,
       sceneDirectory,
-      reason: vscode.l10n.t('Could not inspect every folder in the scene directory ({path}): {error}', { path: sceneTree.errors[0].path, error: sceneTree.errors[0].message })
+      reason: t('Could not inspect every folder in the scene directory ({path}): {error}', { path: sceneTree.errors[0].path, error: sceneTree.errors[0].message })
     };
   }
   if (sceneTree.symbolicLinks.length > 0) {
@@ -284,7 +285,7 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
       canDelete: false,
       scenePath: levelPath,
       sceneDirectory,
-      reason: vscode.l10n.t('The scene folder contains symbolic links and cannot be safely moved as a whole: {path}', { path: sceneTree.symbolicLinks[0] })
+      reason: t('The scene folder contains symbolic links and cannot be safely moved as a whole: {path}', { path: sceneTree.symbolicLinks[0] })
     };
   }
   if (sceneTree.files.length !== 1 || path.resolve(sceneTree.files[0]) !== levelPath) {
@@ -292,7 +293,7 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
       canDelete: false,
       scenePath: levelPath,
       sceneDirectory,
-      reason: vscode.l10n.t('The folder contains {count} level files. Delete Scene only removes a folder that contains exactly one level.', { count: sceneTree.files.length })
+      reason: t('The folder contains {count} level files. Delete Scene only removes a folder that contains exactly one level.', { count: sceneTree.files.length })
     };
   }
 
@@ -300,7 +301,7 @@ async function inspectSceneDeletion(vscodeApi, project, scenePath) {
   try {
     levelContents = await fs.readFile(levelPath, 'utf8');
   } catch (error) {
-    throw new Error(vscode.l10n.t('Scene file could not be read: {error}', { error: error.message }));
+    throw new Error(t('Scene file could not be read: {error}', { error: error.message }));
   }
   const exports = await findExportTargets(vscode, project, levelPath, levelContents);
   const referenceScan = await findSceneReferences(
