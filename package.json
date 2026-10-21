@@ -2,13 +2,29 @@
   "name": "dagor-project-manager",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
+  "homepage": "https://github.com/Grave18/dagor-project-manager#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Grave18/dagor-project-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Grave18/dagor-project-manager/issues"
+  },
+  "keywords": [
+    "dagor",
+    "dagor-engine",
+    "game-development",
+    "game-engine",
+    "level-editor",
+    "project-manager"
+  ],
   "license": "MIT",
   "icon": "media/dagor.png",
   "extensionKind": [
     "workspace"
   ],
-  "version": "0.1.0",
-  "publisher": "project-stalker",
+  "version": "0.2.0",
+  "publisher": "valerii-barabanov",
   "activationEvents": [
     "onStartupFinished"
   ],

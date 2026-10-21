@@ -1,0 +1,8 @@
+.superpowers/**
+docs/**
+test/**
+tools/**
+cliui/**
+CONTRIBUTING.md
+package-lock.json
+tsconfig.json
