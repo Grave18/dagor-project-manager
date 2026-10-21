@@ -1,51 +1,120 @@
-# Dagor Project Manager for VS Code
+# Dagor Project Manager
 
-Adds a **Dagor Project Manager** submenu to the VS Code Explorer file context menu and a separate **Dagor Project Manager** panel on the Activity Bar.
+Manage DagorEngine projects in VS Code. Build project components, open levels
+in daEditor, browse assets with daViewer, and run game executables or command
+files from a project panel.
 
-The **Dagor Project Manager: Projects** view is implemented as a custom panel interface: projects are shown as individual rows; selecting a row expands a project card with actions. The project list is determined by `application.blk` and the corresponding `prog/build.py`; only scenes from that project are shown for each project.
+## Requirements
 
-In the project card:
+- VS Code 1.85 or later
+- A DagorEngine checkout with the Dagor CDK tools
+- Python for running a project's `build.py`
+- Git on `PATH` when creating a project. Each new project is initialized as a
+  Git repository.
 
-- **Build Project** expands a list of components (`code`, `shaders`, `assets`, `vromfs`, `gui`) with multi-select. The button in the component list starts the build for the selected set. While the build is running, it is replaced by a red **Stop Build** button that stops the process. Output is available in a separate channel **Dagor Build: <name>**.
-- **Open daViewer** launches daViewer with the selected project's `application.blk`.
-- **Open Scene** expands `*.level.blk` levels for that project; selecting a level launches daEditor with the corresponding `application.blk`.
-- **Run Game** lists `.exe` files from the project's `game` folder and its immediate subfolders, except dedicated-server executables (`*-ded-*.exe`). The displayed name omits `.exe`. Selecting an entry launches the executable directly, without additional arguments.
-- **Run Command**, below **Run Game**, lists `.cmd` files from the `game` folder and its immediate subfolders. Selecting one opens a VS Code integrated terminal in the `game` folder and runs the command file.
-- The `.cmd` context menu includes **Delete Command** after the reveal and copy actions. It asks for confirmation and moves the file to the system trash, matching **Delete Project** behavior.
-- **Create Command** in the project folder context menu or the **Run Command** heading context menu creates an empty `.cmd` file in `game` (creating that folder if needed) and opens it in the editor. Existing files are opened without being overwritten.
-- **Generate Project** is currently a placeholder and does not change any files.
-- **Stop Build** stops the running build.
+## Install
 
-The list of projects, scenes, and game executables updates when files are created/modified and when workspace folders are added. Updates are also available in the panel header.
+In VS Code, open the Extensions view (`Ctrl+Shift+X`), search for
+**Dagor Project Manager**, and select **Install**.
 
-In the Explorer menu:
+## Find a project
 
-- discovered Dagor project folders → **Dagor Project Manager** with **Build All**, **Open daViewer**, **Open Scene**, **Run Game**, **Run Command**, and **Create Command**; the submenu is hidden on other folders, and scene, game, and command choices appear in a searchable VS Code Quick Pick;
-- project folders are matched by full path, so unrelated folders (including ancestors that merely contain a project) do not show this submenu; nested projects and project folders opened directly as workspace folders are supported.
-- any `.blk`, including `.folder.blk` → **Open with Dagor blkEditor**;
-- `application.blk` → also **Open with Dagor daEditor** and **Open with Dagor daViewer**;
-- `*.level.blk` → also **Open with Dagor daEditor**.
+Open DagorEngine, a project folder, or a folder inside DagorEngine in VS Code.
+The extension discovers project folders containing `application.blk` and
+`prog/build.py` (or `build.py` in the project root). Select the Dagor Project
+Manager icon in the Activity Bar to see the projects. Use **Refresh** to search
+again.
 
-For levels, the launch format is `daEditor3x-dev.exe <application.blk> <level.blk>`. For `application.blk`, daEditor and daViewer are launched with the project configuration path.
+Each project card shows that project's scenes, game executables, and command
+files. The card actions apply to the selected project.
 
-## Installation without Marketplace
+## Project actions
 
-1. Open the repository root in VS Code.
-2. Press `Ctrl+Shift+P`, run **Developer: Install Extension from Location...**, and select this repository's root folder.
-3. Reload the VS Code window if prompted.
+- **Create Project** copies the bundled starter project into the DagorEngine
+  root. It initializes a Git repository and starts the `editor_shaders` and
+  `assets` builds needed by the starter project. Build output appears in the
+  `Dagor Build: <project>` output channel.
+- **Build Project** lets you select `code`, `shaders`, `assets`, `vromfs`, and
+  `gui` components. A running build can be stopped from the same card.
+- **Open daViewer** opens the selected project's `application.blk` in Dagor's
+  asset viewer.
+- **Open Scene** lists `*.level.blk` files under `develop/levels` and opens the
+  selected level in daEditor with its project configuration.
+- **Create Scene** creates an empty scene or one based on the starter scene,
+  which includes a plane and a cube. New scenes are placed under
+  `develop/levels/<scene-name>`.
+- **Run Game** lists `.exe` files in `game/` and its immediate subfolders.
+  Dedicated-server executables are excluded.
+- **Run Command** lists `.cmd` files directly in `game/`. The command runs in
+  the VS Code integrated terminal with `game/` as its working directory.
+- **Create Command** creates a `.cmd` file directly in `game/` and opens it in
+  the editor.
 
-To temporarily load the extension during development, open this folder as a separate project and press `F5` to launch the Extension Development Host.
+### Deleting items
 
-## Tool Paths
+Use the context menu on a project, scene, or command entry to delete it. The
+extension asks for confirmation and normally moves deleted files to the system
+trash.
 
-The extension first uses the `dagorProjectManager.toolsDirectory` VS Code setting, then the `DAGOR_CDK_DIR` environment variable. If neither is set, it searches for `tools/dagor_cdk/windows-x86_64` (or `windows-arm64`) upward from the open workspace folder.
+Before deleting a scene, the extension checks for static text references and
+reports what it found. It moves the scene folder and identified exported level
+files to the trash. References are left unchanged, and **source assets are never
+deleted** as part of scene deletion. Dynamic references may not be detected; the
+inspection details are available in the **Dagor Project Manager** output
+channel.
 
-If needed, specify the path in VS Code user or workspace settings:
+## Open Dagor files from Explorer (RMB Context Menu)
 
-```json
-{
-  "dagorProjectManager.toolsDirectory": "D:\\path\\to\\DagorEngine\\tools\\dagor_cdk\\windows-x86_64"
-}
+Right-click a Dagor file in the VS Code Explorer:
+
+- Any `.blk` file can be opened in **blkEditor**.
+- `application.blk` can also be opened in **daEditor** or **daViewer**.
+- `*.level.blk` can also be opened in **daEditor**. The project folder must be
+  part of the open workspace.
+
+Right-click a discovered project folder for project actions such as building,
+opening a scene, running the game, and creating a command file.
+
+## Settings
+
+Open Settings and search for **Dagor Project Manager**.
+
+### General
+
+- `dagorProjectManager.language` selects **System**, **English**, or an
+  available translation. English is used when the system language has no
+  translation.
+
+### Tools
+
+- `dagorProjectManager.toolsDirectory` points to the directory containing
+  Dagor CDK executables. The extension checks this setting first, then the
+  `DAGOR_CDK_DIR` environment variable, then searches parent folders of the
+  open workspace for DagorEngine's CDK directory.
+- `dagorProjectManager.daEditorExecutable` defaults to
+  `daEditor3x-dev.exe`.
+- `dagorProjectManager.daViewerExecutable` defaults to
+  `assetViewer2-dev.exe`.
+- `dagorProjectManager.blkEditorExecutable` defaults to
+  `blkEditor-dev.exe`.
+
+Executable settings accept either a filename in the CDK directory or an
+absolute path.
+
+### Build
+
+- `dagorProjectManager.pythonExecutable` selects the Python executable used to
+  run `build.py`. It defaults to `python`.
+
+## Development
+
+Run `npm ci` in this repository, then open it in VS Code and press `F5` to
+start an Extension Development Host. To check the source locally, run:
+
+```sh
+npm test
+npm run typecheck
 ```
 
-Executable names are configurable via `dagorProjectManager.blkEditorExecutable`, `dagorProjectManager.daEditorExecutable`, and `dagorProjectManager.daViewerExecutable`; each value can be a name inside the CDK directory or an absolute path. Defaults are `blkEditor-dev.exe`, `daEditor3x-dev.exe`, and `assetViewer2-dev.exe` respectively. The build interpreter can be specified via `dagorProjectManager.pythonExecutable` (default `python`).
+### Project git repository
+[https://github.com/Grave18/dagor-project-manager](https://github.com/Grave18/dagor-project-manager)
